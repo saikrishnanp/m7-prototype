@@ -1,10 +1,17 @@
-import './App.css'
-import { LandingPage } from './LandingPage/LandingPage'
+import { Provider } from "react-redux";
+
+import { LandingPage } from "./LandingPage/LandingPage";
+
+import store from "./redux/store";
+
+import "./App.css";
 
 function App() {
   return (
-    <LandingPage />
-  )
+    <Provider store={store}>
+      <LandingPage />
+    </Provider>
+  );
 }
 
-export default App
+export default App;
