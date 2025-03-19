@@ -6,11 +6,10 @@ import { RootState } from "src/redux/store";
 export const TestComponent = () => {
   const count = useSelector((state: RootState) => state.counter.value);
 
-  console.log(count, "render");
   return (
     <>
       <div
-        className={`font-bold underline shadow-xl shadow-fuchsia-400/95 ${styles.countContainer} dark:bg-amber-200 md:flex sm:grid space-x-4`}
+        className={`font-bold underline shadow-xl shadow-fuchsia-400/95 ${styles.countContainer} dark:bg-amber-200 md:flex sm:grid max-w-max p-1 rounded-xl`}
       >
         test count: {count}
       </div>
