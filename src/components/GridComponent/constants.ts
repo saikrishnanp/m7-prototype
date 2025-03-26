@@ -1,6 +1,6 @@
 import { colorSchemeDark, themeAlpine, iconSetMaterial } from "ag-grid-community";
 
-export   const myTheme = themeAlpine.withParams({
+export const myTheme = themeAlpine.withParams({
     backgroundColor: 'rgb(249, 245, 227)',
     foregroundColor: 'rgb(126, 46, 132)',
     headerTextColor: 'rgb(204, 245, 172)',

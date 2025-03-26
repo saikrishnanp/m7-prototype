@@ -30,9 +30,11 @@ export const GridComponent = () => {
   );
 
   // Column Definitions: Defines the columns to be displayed.
-  const colDefs = useMemo(
+  const colDefs = useMemo<
+    ColDef<{ make: string; model: string; price: number; electric: boolean }>[]
+  >(
     () => [
-      { field: "make", minWidth: 120 },
+      { field: "make", width: 100, editable: true },
       { field: "model", editable: true },
       { field: "price", editable: false },
       { field: "electric", editable: true },
@@ -56,10 +58,10 @@ export const GridComponent = () => {
         rowSelection={rowSelection}
         domLayout="autoHeight"
         theme={myTheme}
-        onCellClicked={(det) => console.log(det)}
-        onCellEditingStarted={(det) => console.log(det, " edit start")}
-        onCellEditingStopped={(det) => console.log(det, " edit stop")}
-        onCellEditRequest={(det) => console.log(det, " edit req")}
+        // onCellClicked={(det) => console.log(det)}
+        // onCellEditingStarted={(det) => console.log(det, " edit start")}
+        // onCellEditingStopped={(det) => console.log(det, " edit stop")}
+        // onCellEditRequest={(det) => console.log(det, " edit req")}
       />
     </div>
   );
