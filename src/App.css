@@ -7,6 +7,29 @@
   text-align: center;
 }
 
+.custom-ag-grid .ag-header {
+  display: none;
+}
+
+/* .custom-ag-grid .ag-cell {
+  white-space: nowrap; 
+  width: auto !important;
+  min-width: fit-content;
+  padding: 5px 10px;
+  overflow: visible;
+} */
+
+.ag-row {
+  display: flex;
+}
+
+.ag-cell {
+  flex-grow: 1; /* Allow cells to expand as needed */
+  width: auto !important; /* Ensure cells expand */
+  min-width: fit-content;
+}
+
+
 /* .logo {
   height: 6em;
   padding: 1.5em;
