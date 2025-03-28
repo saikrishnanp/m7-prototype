@@ -1,14 +1,14 @@
 import { TestPlanEditor } from "./TestPlanEditor";
-import { InOrOutEnum, OnOrOffEnum, TypeOfTestEnum } from "./types";
+import { InOrOutEnum, OnOrOffEnum, TestStepSection, TypeOfTestEnum } from "./types";
 
-const testSteps = [
+const testSteps: TestStepSection[] = [
   {
     id: "constant-data-test",
     descriptionPoints: ["Test that the data is constant"],
     steps: [
       {
         id: "1",
-        name: "Step 1",
+        name: "Step 1 aefkasjdgl; aelhfdklsfgnadsfdf",
         typeOfTest: TypeOfTestEnum.NORMAL,
         inOrOut: InOrOutEnum.INPUT,
         onOrOff: null,
@@ -33,7 +33,7 @@ const testSteps = [
     steps: [
       {
         id: "3",
-        name: "Step 3",
+        name: "Step 3003",
         typeOfTest: TypeOfTestEnum.NORMAL,
         inOrOut: InOrOutEnum.INPUT,
         onOrOff: null,
@@ -52,5 +52,5 @@ const testSteps = [
 ];
 
 export const TestPlanEditorPage = () => {
-  return <TestPlanEditor initialTestSteps={testSteps} />;
+  return <TestPlanEditor testSteps={testSteps} />;
 };

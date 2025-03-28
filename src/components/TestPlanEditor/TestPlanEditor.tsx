@@ -1,197 +1,150 @@
+import { useState } from "react";
+import { MaterialReactTable } from "material-react-table";
+import { Box, IconButton, Button, Typography } from "@mui/material";
+import { Delete, DragIndicator } from "@mui/icons-material";
 import { v4 as uuid } from "uuid";
-import { useState, useRef, useCallback, useMemo } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  GridReadyEvent,
-  GridApi,
-  ColDef,
-  ModuleRegistry,
-  AllCommunityModule,
-} from "ag-grid-community";
-import {
-  InOrOutEnum,
-  OnOrOffEnum,
-  Step,
-  StepsEnum,
-  TestStepSection,
-  TypeOfTestEnum,
-} from "./types";
+import { InOrOutEnum, Step, TestStepSection, TypeOfTestEnum } from "./types";
 
-import styles from "./TestPlanEditor.module.scss";
+export const TestPlanEditor = ({ testSteps }: { testSteps: TestStepSection[] }) => {
+  const [stepsData, setStepsData] = useState<TestStepSection[]>(testSteps);
+  const [draggedRow, setDraggedRow] = useState<{row: Step, sectionId: string} | null>(null);
 
-// Register all Community features
-ModuleRegistry.registerModules([AllCommunityModule]);
+  const handleDeleteRow = (sectionId: string, rowId: string) => {
+    setStepsData((prevSteps) =>
+      prevSteps.map((section) =>
+        section.id === sectionId
+          ? { ...section, steps: section.steps.filter((step) => step.id !== rowId) }
+          : section
+      )
+    );
+  };
 
-interface TestPlanEditorProps {
-  initialTestSteps: TestStepSection[];
-}
-
-export const TestPlanEditor = ({ initialTestSteps }: TestPlanEditorProps) => {
-  const [testSteps, setTestSteps] =
-    useState<TestStepSection[]>(initialTestSteps);
-  const gridRefs = useRef<Record<string, GridApi | undefined>>({});
-
-  const handleGridReady = useCallback(
-    (params: GridReadyEvent, sectionId: string) => {
-      gridRefs.current[sectionId] = params.api;
-      params.api.sizeColumnsToFit();
-    },
-    []
-  );
-
-  interface ColumnDefParams {
-    value: string | null | undefined;
-    data: Step;
-    api: GridApi;
-  }
-
-  const columnDefs: ColDef<Step>[] = useMemo(
-    () => [
-      {
-        rowDrag: true,
-        width: 40,
-        suppressMovable: true,
-        cellRenderer: () => <span className="drag-handle">&#9776;</span>, // Drag icon
-        resizable: false,
-      },
-      {
-        field: "name",
-        editable: true,
-        cellEditorParams: { skipHeaderOnFocus: true }, // Add skipHeaderOnFocus
-        cellRenderer: (params: ColumnDefParams) =>
-          params.value || <span className="text-gray-400">Click to edit!</span>,
-        singleClickEdit: true,
-      },
-      {
-        field: "typeOfTest",
-        editable: true,
-        cellEditor: "agSelectCellEditor",
-        cellEditorParams: {
-          values: Object.values(TypeOfTestEnum),
-          skipHeaderOnFocus: true,
-        }, // Add skipHeaderOnFocus
-        cellRenderer: (params: ColumnDefParams) =>
-          params.value || <span className="text-gray-400">Click to edit!</span>,
-        singleClickEdit: true,
-      },
-      {
-        field: "inOrOut",
-        headerName: "In/Out",
-        editable: true,
-        cellEditor: "agSelectCellEditor",
-        cellEditorParams: {
-          values: Object.values(InOrOutEnum),
-          skipHeaderOnFocus: true,
-        }, // Add skipHeaderOnFocus
-        cellRenderer: (params: ColumnDefParams) =>
-          params.value || <span className="text-gray-400">Click to edit!</span>,
-        singleClickEdit: true,
-      },
-      {
-        field: "onOrOff",
-        editable: true,
-        cellEditor: "agSelectCellEditor",
-        cellEditorParams: {
-          values: [null, ...Object.values(OnOrOffEnum)],
-          skipHeaderOnFocus: true,
-        }, // Add skipHeaderOnFocus
-        cellRenderer: (params: ColumnDefParams) =>
-          params.value || <span className="text-gray-400">Click to edit!</span>,
-        singleClickEdit: true,
-      },
-      {
-        field: "includedInDataSheet",
-        editable: true,
-        cellEditor: "agToggleCellEditor",
-      },
-      {
-        headerName: "Delete",
-        filter: false,
-        cellRenderer: (params: ColumnDefParams) => (
-          <button
-            className="w-0.5 h-0.5 bg-green-500"
-            onClick={() => {
-              const updateTestSteps = testSteps.map((section) => {
-                const updatedSteps = section.steps.filter((step) => {
-                  return step !== params.data;
-                });
-
-                return { ...section, steps: updatedSteps };
-              });
-              setTestSteps(updateTestSteps);
-            }}
-          />
-        ),
-      },
-    ],
-    [testSteps]
-  );
-
-  const defaultColDef = useMemo(() => {
-    return {
-      sortable: true,
-      resizable: true,
-      filter: true,
-    };
-  }, []);
-
-  const addRow = useCallback(
-    (sectionId: string, index?: number) => {
-      setTestSteps((prevSteps) => {
-        const updatedSteps = prevSteps.map((section) => {
-          if (section.id === sectionId) {
-            const newRow: Step = {
-              id: uuid(),
-              name: StepsEnum.Step1,
-              typeOfTest: TypeOfTestEnum.NORMAL,
-              inOrOut: InOrOutEnum.INPUT,
-              onOrOff: null,
-              includedInDataSheet: true,
-            };
-            const newSteps = [...section.steps];
-
-            if (index === undefined) {
-              newSteps.push(newRow);
-            } else {
-              newSteps.splice(index, 0, newRow);
+  const handleAddRow = (sectionId: string) => {
+    setStepsData((prevSteps) =>
+      prevSteps.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              steps: [
+                ...section.steps,
+                {
+                  id: uuid(),
+                  name: "New Step",
+                  typeOfTest: TypeOfTestEnum.NORMAL,
+                  inOrOut: InOrOutEnum.INPUT,
+                  onOrOff: null,
+                  includedInDataSheet: true,
+                },
+              ],
             }
+          : section
+      )
+    );
+  };
 
-            return { ...section, steps: newSteps };
+  const handleDragStart = (row: Step, sectionId: string) => {
+    setDraggedRow({ row, sectionId });
+  };
+
+  const handleDrop = (targetSectionId: string) => {
+    if (!draggedRow) return;
+    
+    const { row, sectionId: sourceSectionId } = draggedRow;
+
+    if (sourceSectionId !== targetSectionId) {
+      setStepsData((prevSteps) => {
+        return prevSteps.map((section) => {
+          if (section.id === sourceSectionId) {
+            // Remove row from source section (create a new steps array)
+            const updatedSourceSteps = section.steps.filter((step) => step.id !== row.id);
+            return { ...section, steps: updatedSourceSteps };
+          } else if (section.id === targetSectionId) {
+            // Add row to target section (create a new steps array)
+            const updatedTargetSteps = [...section.steps, row];
+            return { ...section, steps: updatedTargetSteps };
           }
           return section;
         });
-        return updatedSteps;
       });
-    },
-    [setTestSteps]
-  );
+    }
+
+    setDraggedRow(null);
+};
 
   return (
-    <div>
-      {testSteps.map((section) => (
-        <div className={styles.editorContainer} key={section.id}>
-          <h3>{section.id}</h3>
+    <Box>
+      {stepsData.map((section) => (
+        <Box
+          key={section.id}
+          sx={{ mb: 3, p: 2, border: "1px solid #ddd" }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={() => handleDrop(section.id)}
+        >
+          <Typography variant="h6">{section.id}</Typography>
           <ul>
             {section.descriptionPoints.map((desc, index) => (
               <li key={index}>{desc}</li>
             ))}
           </ul>
-          <div className={styles.sectionTableContainer}>
-            <AgGridReact
-              className={`${styles.sectionTable} custom-ag-grid`}
-              ref={(ref) => {
-                if (ref) gridRefs.current[section.id] = ref.api;
-              }}
-              rowData={section.steps}
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              rowDragManaged={true}
-              onGridReady={(params) => handleGridReady(params, section.id)}
-            />
-          </div>
-          <button onClick={() => addRow(section.id)}>Add Row</button>
-        </div>
+          <MaterialReactTable
+            columns={[
+              {
+                accessorKey: "drag",
+                header: "Drag",
+                enableSorting: false,
+                enableColumnActions: false,
+                Cell: ({ row }) => (
+                  <div
+                    draggable
+                    onDragStart={() => handleDragStart(row.original, section.id)}
+                    style={{ cursor: "grab" }}
+                  >
+                    <DragIndicator />
+                  </div>
+                ),
+              },
+              { accessorKey: "name", header: "Name" },
+              { accessorKey: "typeOfTest", header: "Type of Test" },
+              { accessorKey: "inOrOut", header: "In or Out" },
+              {
+                accessorKey: "onOrOff",
+                header: "On or Off",
+                Cell: ({ cell }) => cell.getValue() || <span style={{ color: "gray" }}>Unset</span>,
+              },
+              {
+                accessorKey: "includedInDataSheet",
+                header: "Included",
+                Cell: ({ cell }) => (cell.getValue() ? "Yes" : "No"),
+              },
+              {
+                accessorKey: "actions",
+                header: "Actions",
+                enableSorting: false,
+                enableColumnActions: false,
+                Cell: ({ row }) => (
+                  <IconButton
+                    onClick={() => handleDeleteRow(section.id, row.original.id)}
+                    color="error"
+                  >
+                    <Delete />
+                  </IconButton>
+                ),
+              },
+            ]}
+            data={section.steps}
+            enableSorting={false}
+            enableRowNumbers={false}
+            enableFilters={false}
+            enableColumnOrdering={false}
+            enableRowOrdering={false}
+            muiTableHeadProps={{ sx: { display: "none" } }}
+            muiTableProps={{ sx: { tableLayout: "auto" } }}
+          />
+          <Button onClick={() => handleAddRow(section.id)} variant="contained" sx={{ mt: 2 }}>
+            Add Row
+          </Button>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 };
