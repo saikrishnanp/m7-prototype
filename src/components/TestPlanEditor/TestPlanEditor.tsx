@@ -1,19 +1,40 @@
 import { useState } from "react";
-import { MaterialReactTable } from "material-react-table";
-import { Box, IconButton, Button, Typography } from "@mui/material";
-import { Delete, DragIndicator } from "@mui/icons-material";
+import { Box, Button } from "@mui/material";
+import {
+  DndContext,
+  closestCenter,
+  DragOverlay,
+  DragEndEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { v4 as uuid } from "uuid";
+
+import { TestPlanRow } from "./TestplanRow";
+
 import { InOrOutEnum, Step, TestStepSection, TypeOfTestEnum } from "./types";
 
-export const TestPlanEditor = ({ testSteps }: { testSteps: TestStepSection[] }) => {
+import styles from "./TestPlanEditor.module.scss";
+
+export const TestPlanEditor = ({
+  testSteps,
+}: {
+  testSteps: TestStepSection[];
+}) => {
   const [stepsData, setStepsData] = useState<TestStepSection[]>(testSteps);
-  const [draggedRow, setDraggedRow] = useState<{row: Step, sectionId: string} | null>(null);
+  const [draggedItem, setDraggedItem] = useState<Step | null>(null);
 
   const handleDeleteRow = (sectionId: string, rowId: string) => {
     setStepsData((prevSteps) =>
       prevSteps.map((section) =>
         section.id === sectionId
-          ? { ...section, steps: section.steps.filter((step) => step.id !== rowId) }
+          ? {
+              ...section,
+              steps: section.steps.filter((step) => step.id !== rowId),
+            }
           : section
       )
     );
@@ -32,7 +53,7 @@ export const TestPlanEditor = ({ testSteps }: { testSteps: TestStepSection[] }) 
                   name: "New Step",
                   typeOfTest: TypeOfTestEnum.NORMAL,
                   inOrOut: InOrOutEnum.INPUT,
-                  onOrOff: null,
+                  onOrOff: false,
                   includedInDataSheet: true,
                 },
               ],
@@ -42,109 +63,136 @@ export const TestPlanEditor = ({ testSteps }: { testSteps: TestStepSection[] }) 
     );
   };
 
-  const handleDragStart = (row: Step, sectionId: string) => {
-    setDraggedRow({ row, sectionId });
+  const handleEditCell = (
+    sectionId: string,
+    rowId: string,
+    key: string,
+    value: string | boolean
+  ) => {
+    setStepsData((prevSteps) =>
+      prevSteps.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              steps: section.steps.map((step) =>
+                step.id === rowId ? { ...step, [key]: value } : step
+              ),
+            }
+          : section
+      )
+    );
   };
 
-  const handleDrop = (targetSectionId: string) => {
-    if (!draggedRow) return;
-    
-    const { row, sectionId: sourceSectionId } = draggedRow;
+  const handleDragStart = (event: DragStartEvent) => {
+    const id = event.active.id;
+    const item = stepsData
+      .flatMap((section) => section.steps)
+      .find((step) => step.id === id);
+    setDraggedItem(item ?? null);
+  };
 
-    if (sourceSectionId !== targetSectionId) {
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+  
+    if (!over) return;
+  
+    if (active.id !== over.id) {
       setStepsData((prevSteps) => {
-        return prevSteps.map((section) => {
-          if (section.id === sourceSectionId) {
-            // Remove row from source section (create a new steps array)
-            const updatedSourceSteps = section.steps.filter((step) => step.id !== row.id);
-            return { ...section, steps: updatedSourceSteps };
-          } else if (section.id === targetSectionId) {
-            // Add row to target section (create a new steps array)
-            const updatedTargetSteps = [...section.steps, row];
-            return { ...section, steps: updatedTargetSteps };
+        const updatedSteps = [...prevSteps];
+        let sourceSection: TestStepSection | undefined,
+          targetSection: TestStepSection | undefined;
+        let activeStepIndex: number | undefined,
+          overStepIndex: number | undefined;
+  
+        updatedSteps.forEach((section) => {
+          const activeIndex = section.steps.findIndex(
+            (step) => step.id === active.id
+          );
+          const overIndex = section.steps.findIndex(
+            (step) => step.id === over.id
+          );
+  
+          if (activeIndex !== -1) {
+            sourceSection = section;
+            activeStepIndex = activeIndex;
           }
-          return section;
+  
+          if (overIndex !== -1) {
+            targetSection = section;
+            overStepIndex = overIndex;
+          }
         });
+  
+        if (
+          !sourceSection ||
+          !targetSection ||
+          activeStepIndex === undefined ||
+          overStepIndex === undefined
+        ) {
+          return prevSteps;
+        }
+
+        const [movedRow] = sourceSection.steps.splice(activeStepIndex, 1);
+        targetSection.steps.splice(overStepIndex, 0, movedRow);
+  
+        return updatedSteps;
       });
     }
-
-    setDraggedRow(null);
-};
+  
+    setDraggedItem(null);
+  };
 
   return (
-    <Box>
-      {stepsData.map((section) => (
-        <Box
-          key={section.id}
-          sx={{ mb: 3, p: 2, border: "1px solid #ddd" }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={() => handleDrop(section.id)}
-        >
-          <Typography variant="h6">{section.id}</Typography>
-          <ul>
-            {section.descriptionPoints.map((desc, index) => (
-              <li key={index}>{desc}</li>
-            ))}
-          </ul>
-          <MaterialReactTable
-            columns={[
-              {
-                accessorKey: "drag",
-                header: "Drag",
-                enableSorting: false,
-                enableColumnActions: false,
-                Cell: ({ row }) => (
-                  <div
-                    draggable
-                    onDragStart={() => handleDragStart(row.original, section.id)}
-                    style={{ cursor: "grab" }}
-                  >
-                    <DragIndicator />
-                  </div>
-                ),
-              },
-              { accessorKey: "name", header: "Name" },
-              { accessorKey: "typeOfTest", header: "Type of Test" },
-              { accessorKey: "inOrOut", header: "In or Out" },
-              {
-                accessorKey: "onOrOff",
-                header: "On or Off",
-                Cell: ({ cell }) => cell.getValue() || <span style={{ color: "gray" }}>Unset</span>,
-              },
-              {
-                accessorKey: "includedInDataSheet",
-                header: "Included",
-                Cell: ({ cell }) => (cell.getValue() ? "Yes" : "No"),
-              },
-              {
-                accessorKey: "actions",
-                header: "Actions",
-                enableSorting: false,
-                enableColumnActions: false,
-                Cell: ({ row }) => (
-                  <IconButton
-                    onClick={() => handleDeleteRow(section.id, row.original.id)}
-                    color="error"
-                  >
-                    <Delete />
-                  </IconButton>
-                ),
-              },
-            ]}
-            data={section.steps}
-            enableSorting={false}
-            enableRowNumbers={false}
-            enableFilters={false}
-            enableColumnOrdering={false}
-            enableRowOrdering={false}
-            muiTableHeadProps={{ sx: { display: "none" } }}
-            muiTableProps={{ sx: { tableLayout: "auto" } }}
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className={styles.container}>
+        {stepsData.map((section) => (
+          <SortableContext
+            key={section.id}
+            items={section.steps.map((step) => step.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd" }}>
+              <div className={styles.sectionDescription}>
+                <h6>{section.id}</h6>
+                <ul>
+                  {section.descriptionPoints.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </div>
+              {section.steps.map((step) => (
+                <TestPlanRow
+                  key={step.id}
+                  step={step}
+                  sectionId={section.id}
+                  handleDeleteRow={handleDeleteRow}
+                  handleEditCell={handleEditCell}
+                />
+              ))}
+              <Button
+                onClick={() => handleAddRow(section.id)}
+                variant="contained"
+              >
+                Add Row
+              </Button>
+            </Box>
+          </SortableContext>
+        ))}
+      </div>
+      <DragOverlay>
+        {draggedItem && (
+          <TestPlanRow
+            step={draggedItem}
+            sectionId={draggedItem.id}
+            handleDeleteRow={handleDeleteRow}
+            handleEditCell={handleEditCell}
           />
-          <Button onClick={() => handleAddRow(section.id)} variant="contained" sx={{ mt: 2 }}>
-            Add Row
-          </Button>
-        </Box>
-      ))}
-    </Box>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 };

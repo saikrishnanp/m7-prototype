@@ -15,17 +15,12 @@ export enum InOrOutEnum {
   OUTPUT = "Output",
 }
 
-export enum OnOrOffEnum {
-  ON = "On",
-  OFF = "Off",
-}
-
 export interface Step {
   id: string;
   name: string;
   typeOfTest: TypeOfTestEnum;
   inOrOut: InOrOutEnum;
-  onOrOff: OnOrOffEnum | null;
+  onOrOff: boolean | null;
   includedInDataSheet: boolean;
 }
 

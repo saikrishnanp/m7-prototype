@@ -1,5 +1,5 @@
 import { TestPlanEditor } from "./TestPlanEditor";
-import { InOrOutEnum, OnOrOffEnum, TestStepSection, TypeOfTestEnum } from "./types";
+import { InOrOutEnum, TestStepSection, TypeOfTestEnum } from "./types";
 
 const testSteps: TestStepSection[] = [
   {
@@ -8,7 +8,7 @@ const testSteps: TestStepSection[] = [
     steps: [
       {
         id: "1",
-        name: "Step 1 aefkasjdgl; aelhfdklsfgnadsfdf",
+        name: "Step 1 - Constant Data",
         typeOfTest: TypeOfTestEnum.NORMAL,
         inOrOut: InOrOutEnum.INPUT,
         onOrOff: null,
@@ -17,9 +17,9 @@ const testSteps: TestStepSection[] = [
       {
         id: "2",
         name: "Step 2",
-        typeOfTest: TypeOfTestEnum.NORMAL,
+        typeOfTest: TypeOfTestEnum.LOAD,
         inOrOut: InOrOutEnum.INPUT,
-        onOrOff: OnOrOffEnum.ON,
+        onOrOff: true,
         includedInDataSheet: true,
       },
     ],
@@ -44,7 +44,7 @@ const testSteps: TestStepSection[] = [
         name: "Step 4",
         typeOfTest: TypeOfTestEnum.NORMAL,
         inOrOut: InOrOutEnum.INPUT,
-        onOrOff: OnOrOffEnum.ON,
+        onOrOff: true,
         includedInDataSheet: false,
       },
     ],
