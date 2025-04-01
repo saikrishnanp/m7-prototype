@@ -1,13 +1,14 @@
+import clsx from "clsx";
 import { useSortable } from "@dnd-kit/sortable";
-import { Step, TypeOfTestEnum } from "./types";
+import { Box, IconButton } from "@mui/material";
 import {
-  Box,
-  IconButton,
-  MenuItem,
-  Select,
-  Switch,
-} from "@mui/material";
+  VscodeOption,
+  VscodeSingleSelect,
+  VscodeCheckbox,
+} from "@vscode-elements/react-elements";
 import { Delete, DragIndicator } from "@mui/icons-material";
+
+import { Step, TypeOfTestEnum } from "./types";
 
 import styles from "./TestPlanEditor.module.scss";
 
@@ -55,20 +56,31 @@ export const TestPlanRow = ({
         }
         className={styles.textField}
       />
-      <Select
+      <VscodeSingleSelect
+        className={clsx("pl-1", styles.selectField, "rounded-xl")}
         value={step.typeOfTest}
-        onChange={(e) =>
-          handleEditCell(sectionId, step.id, "typeOfTest", e.target.value)
-        }
-        size="small"
+        onChange={(e) => {
+          const target = e.target as HTMLSelectElement;
+          handleEditCell(sectionId, step.id, "typeOfTest", target.value);
+        }}
       >
-        <MenuItem value={TypeOfTestEnum.NORMAL}>Normal</MenuItem>
-        <MenuItem value={TypeOfTestEnum.LOAD}>Load</MenuItem>
-      </Select>
-      <Switch
+        <VscodeOption value={TypeOfTestEnum.NORMAL}>
+          {TypeOfTestEnum.NORMAL}
+        </VscodeOption>
+        <VscodeOption value={TypeOfTestEnum.LOAD}>
+          {TypeOfTestEnum.LOAD}
+        </VscodeOption>
+      </VscodeSingleSelect>
+      <VscodeCheckbox
+        className="pl-1"
         checked={!!step.onOrOff}
         onChange={(e) =>
-          handleEditCell(sectionId, step.id, "onOrOff", e.target.checked)
+          handleEditCell(
+            sectionId,
+            step.id,
+            "onOrOff",
+            (e.target as HTMLInputElement).checked
+          )
         }
       />
       <IconButton

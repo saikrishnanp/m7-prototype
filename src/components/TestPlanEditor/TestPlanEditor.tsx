@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button } from "@mui/material";
+import { Button } from "@mui/material";
 import {
   DndContext,
   closestCenter,
@@ -155,7 +155,7 @@ export const TestPlanEditor = ({
             items={section.steps.map((step) => step.id)}
             strategy={verticalListSortingStrategy}
           >
-            <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd" }}>
+            <div className="border border-white rounded-md p-2 mb-2 max-h-100 overflow-auto">
               <div className={styles.sectionDescription}>
                 <h6>{section.id}</h6>
                 <ul>
@@ -179,7 +179,7 @@ export const TestPlanEditor = ({
               >
                 Add Row
               </Button>
-            </Box>
+            </div>
           </SortableContext>
         ))}
       </div>
