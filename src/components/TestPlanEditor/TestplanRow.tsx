@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { useSortable } from "@dnd-kit/sortable";
-import { Box, IconButton } from "@mui/material";
+import { IconButton } from "@mui/material";
 import {
   VscodeOption,
   VscodeSingleSelect,
@@ -40,15 +40,19 @@ export const TestPlanRow = ({
     transition,
   };
 
+  const nestedLevel = step.nestedLevel || 0;
+
   return (
-    <Box
-      ref={setNodeRef}
-      style={style}
-      sx={{ display: "flex", alignItems: "center", mb: 1 }}
-    >
-      <IconButton size="small" {...listeners} {...attributes}>
+    <div ref={setNodeRef} style={style} className="flex items-center">
+      <div
+        className={styles.nestedLevelGap}
+        style={{ width: `${nestedLevel * 10}px` }}
+      >
+        {" "}
+      </div>
+      <div {...listeners} {...attributes} className="cursor-grab" title="Drag">
         <DragIndicator />
-      </IconButton>
+      </div>
       <input
         defaultValue={step.name}
         onBlur={(e) =>
@@ -72,7 +76,7 @@ export const TestPlanRow = ({
         </VscodeOption>
       </VscodeSingleSelect>
       <VscodeCheckbox
-        className="pl-1"
+        className="pl-1 ml-2"
         checked={!!step.onOrOff}
         onChange={(e) =>
           handleEditCell(
@@ -89,6 +93,6 @@ export const TestPlanRow = ({
       >
         <Delete />
       </IconButton>
-    </Box>
+    </div>
   );
 };

@@ -1,5 +1,5 @@
+import { VscodeButton } from "@vscode-elements/react-elements";
 import { useState } from "react";
-import { Button } from "@mui/material";
 import {
   DndContext,
   closestCenter,
@@ -15,6 +15,11 @@ import { v4 as uuid } from "uuid";
 
 import { TestPlanRow } from "./TestplanRow";
 
+import {
+  findStepIndices,
+  getMovedRowWithNestedLevel,
+} from "./utils";
+
 import { InOrOutEnum, Step, TestStepSection, TypeOfTestEnum } from "./types";
 
 import styles from "./TestPlanEditor.module.scss";
@@ -26,6 +31,9 @@ export const TestPlanEditor = ({
 }) => {
   const [stepsData, setStepsData] = useState<TestStepSection[]>(testSteps);
   const [draggedItem, setDraggedItem] = useState<Step | null>(null);
+  const [collapsedSteps, setCollapsedSteps] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   const handleDeleteRow = (sectionId: string, rowId: string) => {
     setStepsData((prevSteps) =>
@@ -55,6 +63,7 @@ export const TestPlanEditor = ({
                   inOrOut: InOrOutEnum.INPUT,
                   onOrOff: false,
                   includedInDataSheet: true,
+                  nestedLevel: 0,
                 },
               ],
             }
@@ -93,36 +102,16 @@ export const TestPlanEditor = ({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-  
+
     if (!over) return;
-  
+
     if (active.id !== over.id) {
       setStepsData((prevSteps) => {
         const updatedSteps = [...prevSteps];
-        let sourceSection: TestStepSection | undefined,
-          targetSection: TestStepSection | undefined;
-        let activeStepIndex: number | undefined,
-          overStepIndex: number | undefined;
-  
-        updatedSteps.forEach((section) => {
-          const activeIndex = section.steps.findIndex(
-            (step) => step.id === active.id
-          );
-          const overIndex = section.steps.findIndex(
-            (step) => step.id === over.id
-          );
-  
-          if (activeIndex !== -1) {
-            sourceSection = section;
-            activeStepIndex = activeIndex;
-          }
-  
-          if (overIndex !== -1) {
-            targetSection = section;
-            overStepIndex = overIndex;
-          }
-        });
-  
+
+        const { sourceSection, targetSection, activeStepIndex, overStepIndex } =
+          findStepIndices(updatedSteps, String(active.id), String(over.id));
+
         if (
           !sourceSection ||
           !targetSection ||
@@ -133,13 +122,39 @@ export const TestPlanEditor = ({
         }
 
         const [movedRow] = sourceSection.steps.splice(activeStepIndex, 1);
-        targetSection.steps.splice(overStepIndex, 0, movedRow);
-  
+
+        const movedRowWithNestedLevel = getMovedRowWithNestedLevel(
+          movedRow,
+          targetSection,
+          overStepIndex
+        );
+
+        targetSection.steps.splice(overStepIndex, 0, movedRowWithNestedLevel);
+
         return updatedSteps;
       });
     }
-  
+
     setDraggedItem(null);
+  };
+
+  const toggleCollapse = (sectionId: string) => {
+    setCollapsedSteps((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
+
+  const isStepVisible = (step: Step, index: number, steps: Step[]) => {
+    for (let i = index - 1; i >= 0; i--) {
+      if (
+        step.nestedLevel > steps[i].nestedLevel &&
+        collapsedSteps[steps[i].id]
+      ) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
@@ -156,29 +171,54 @@ export const TestPlanEditor = ({
             strategy={verticalListSortingStrategy}
           >
             <div className="border border-white rounded-md p-2 mb-2 max-h-100 overflow-auto">
-              <div className={styles.sectionDescription}>
-                <h6>{section.id}</h6>
-                <ul>
-                  {section.descriptionPoints.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
+              <div className="flex justify-between items-center mb-2">
+                <div className={styles.sectionDescription}>
+                  <h6>{section.id}</h6>
+                  <ul>
+                    {section.descriptionPoints.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+                <VscodeButton
+                  className="p-1 rounded-sm"
+                  type="button"
+                  onClick={() => handleAddRow(section.id)}
+                >
+                  Add Row
+                </VscodeButton>
               </div>
-              {section.steps.map((step) => (
-                <TestPlanRow
-                  key={step.id}
-                  step={step}
-                  sectionId={section.id}
-                  handleDeleteRow={handleDeleteRow}
-                  handleEditCell={handleEditCell}
-                />
-              ))}
-              <Button
-                onClick={() => handleAddRow(section.id)}
-                variant="contained"
-              >
-                Add Row
-              </Button>
+              {section.steps.map((step, index) => {
+                const doesHaveNestedChildren = section.steps[index + 1]
+                  ? section.steps[index + 1].nestedLevel > step.nestedLevel
+                  : false;
+
+                if (!isStepVisible(step, index, section.steps)) {
+                  return null;
+                }
+
+                return (
+                  <div className="flex items-center" key={step.id}>
+                    {doesHaveNestedChildren ? (
+                      <div
+                        className="cursor-pointer w-1.5 mr-1"
+                        onClick={() => toggleCollapse(step.id)}
+                      >
+                        {collapsedSteps[step.id] ? <p>+</p> : <p>-</p>}
+                      </div>
+                    ) : (
+                      <div className="w-1.5 mr-1" />
+                    )}
+                    <TestPlanRow
+                      key={step.id}
+                      step={step}
+                      sectionId={section.id}
+                      handleDeleteRow={handleDeleteRow}
+                      handleEditCell={handleEditCell}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </SortableContext>
         ))}

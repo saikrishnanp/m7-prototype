@@ -22,6 +22,7 @@ export interface Step {
   inOrOut: InOrOutEnum;
   onOrOff: boolean | null;
   includedInDataSheet: boolean;
+  nestedLevel: number;
 }
 
 export interface TestStepSection {
