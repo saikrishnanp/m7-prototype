@@ -6,7 +6,7 @@ import {
   VscodeSingleSelect,
   VscodeCheckbox,
 } from "@vscode-elements/react-elements";
-import { Delete, DragIndicator } from "@mui/icons-material";
+import { Delete, DragIndicator, FileCopy } from "@mui/icons-material";
 
 import { Step, TypeOfTestEnum } from "./types";
 
@@ -22,13 +22,17 @@ interface ITestPlanRowProps {
     value: string | boolean
   ) => void;
   handleDeleteRow: (sectionId: string, rowId: string) => void;
+  handleDuplicateRow: (step: Step, sectionId: string) => void;
+  handleRowClick: (row: Step) => void;
 }
 
 export const TestPlanRow = ({
   step,
   sectionId,
   handleDeleteRow,
+  handleDuplicateRow,
   handleEditCell,
+  handleRowClick,
 }: ITestPlanRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: step.id });
@@ -43,7 +47,15 @@ export const TestPlanRow = ({
   const nestedLevel = step.nestedLevel || 0;
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={clsx("flex items-center", styles.row)}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleRowClick(step)
+      }}
+    >
       <div
         className={styles.nestedLevelGap}
         style={{ width: `${nestedLevel * 10}px` }}
@@ -88,6 +100,17 @@ export const TestPlanRow = ({
         }
       />
       <IconButton
+        className={styles.duplicateButton}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDuplicateRow(step, sectionId)
+        }}
+        color="info"
+      >
+        <FileCopy />
+      </IconButton>
+      <IconButton
+        className={styles.deleteButton}
         onClick={() => handleDeleteRow(sectionId, step.id)}
         color="error"
       >

@@ -53,3 +53,13 @@ ul {
   margin-left: 20px;
   list-style-type: circle;
 }
+
+.deleteButton, .duplicateButton {
+  visibility: hidden !important;
+}
+
+.row:hover {
+  .deleteButton, .duplicateButton {
+    visibility: visible !important;
+  }
+}
