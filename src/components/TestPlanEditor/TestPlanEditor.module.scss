@@ -37,6 +37,15 @@ h3, ul {
   }
 }
 
+.textField.edit {
+  border: none;
+}
+
+.textField.edit:active {
+  border: none;
+  outline: none;
+}
+
 .selectField {
   max-width: 150px;
 }

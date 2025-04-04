@@ -20,6 +20,7 @@ export interface Step {
   name: string;
   typeOfTest: TypeOfTestEnum;
   inOrOut: InOrOutEnum;
+  nameUnit?: string;
   onOrOff: boolean | null;
   includedInDataSheet: boolean;
   nestedLevel: number;

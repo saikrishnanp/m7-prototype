@@ -16,6 +16,7 @@ import styles from "./TestPlanEditor.module.scss";
 interface ITestPlanRowProps {
   step: Step;
   sectionId: string;
+  isRowActive: boolean;
   handleEditCell: (
     sectionId: string,
     stepId: string,
@@ -34,12 +35,13 @@ export const TestPlanRow = ({
   handleDuplicateRow,
   handleEditCell,
   handleRowClick,
+  isRowActive,
 }: ITestPlanRowProps) => {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ 
-      id: step.id, 
+    useSortable({
+      id: step.id,
       animateLayoutChanges: () => false,
     });
 
@@ -47,7 +49,7 @@ export const TestPlanRow = ({
     transform: transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined,
-      transition
+    transition,
   };
 
   const nestedLevel = step.nestedLevel || 0;
@@ -61,6 +63,7 @@ export const TestPlanRow = ({
         e.stopPropagation();
         handleRowClick(step);
       }}
+      onBlur={() => setFocusedInput(null)}
     >
       <div
         className={styles.nestedLevelGap}
@@ -71,25 +74,30 @@ export const TestPlanRow = ({
       <div {...listeners} {...attributes} className="cursor-grab" title="Drag">
         <DragIndicator />
       </div>
-      <div className="flex flex-row">
+      <div className={clsx("flex flex-row rounded-sm", {
+        ["border border-gray-400"]: focusedInput === "name" && isRowActive,
+      })}>
+        {focusedInput && isRowActive && <p>type</p>}
         <input
           defaultValue={step.name}
           onFocus={() => setFocusedInput("name")}
           onBlur={(e) => {
-            setFocusedInput(null);
             handleEditCell(sectionId, step.id, "name", e.target.value);
           }}
-          className={styles.textField}
+          className={clsx(styles.textField, {
+            ["underline"]: focusedInput === "name" && isRowActive,
+            [styles.edit]: focusedInput === "name" && isRowActive,
+          })}
         />
-        {focusedInput === "name" && (
-          <div className="flex flex-row">
-            <p>
-              <strong>Type:</strong> Text
-            </p>
-            <p>
-              <strong>Unit:</strong> N/A
-            </p>
-          </div>
+        {focusedInput && isRowActive && (
+          <input
+            onBlur={(e) => {
+              handleEditCell(sectionId, step.id, "nameUnit", e.target.value);
+            }}
+            type="text"
+            className={clsx(styles.textField, styles.edit)}
+            defaultValue={step.nameUnit}
+          />
         )}
       </div>
       <div className="flex flex-row">
@@ -97,7 +105,6 @@ export const TestPlanRow = ({
           className={clsx("pl-1", styles.selectField, "rounded-xl")}
           value={step.typeOfTest}
           onFocus={() => setFocusedInput("typeOfTest")}
-          onBlur={() => setFocusedInput(null)}
           onChange={(e) => {
             const target = e.target as HTMLSelectElement;
             handleEditCell(sectionId, step.id, "typeOfTest", target.value);
@@ -110,13 +117,10 @@ export const TestPlanRow = ({
             {TypeOfTestEnum.LOAD}
           </VscodeOption>
         </VscodeSingleSelect>
-        {focusedInput === "typeOfTest" && (
+        {focusedInput && isRowActive && (
           <div className="flex flex-row">
             <p>
-              <strong>Type:</strong> Dropdown
-            </p>
-            <p>
-              <strong>Unit:</strong> N/A
+              Dropdown
             </p>
           </div>
         )}
@@ -126,7 +130,6 @@ export const TestPlanRow = ({
           className="pl-1 ml-2"
           checked={!!step.onOrOff}
           onFocus={() => setFocusedInput("onOrOff")}
-          onBlur={() => setFocusedInput(null)}
           onChange={(e) =>
             handleEditCell(
               sectionId,
@@ -136,13 +139,10 @@ export const TestPlanRow = ({
             )
           }
         />
-        {focusedInput === "onOrOff" && (
+        {focusedInput && isRowActive && (
           <div className="flex flex-row">
             <p>
-              <strong>Type:</strong> Checkbox
-            </p>
-            <p>
-              <strong>Unit:</strong> Boolean
+              Checkbox
             </p>
           </div>
         )}

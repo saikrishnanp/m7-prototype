@@ -168,6 +168,7 @@ export const TestPlanSection = ({
                         key={step.id}
                         step={step}
                         sectionId={section.id}
+                        isRowActive={isActiveRow}
                         handleDeleteRow={handleDeleteRow}
                         handleDuplicateRow={handleDuplicateRow}
                         handleEditCell={handleEditCell}
