@@ -1,23 +1,21 @@
-import clsx from "clsx";
 import { v4 as uuid } from "uuid";
 import copy from "copy-to-clipboard";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { VscodeButton } from "@vscode-elements/react-elements";
 import {
   DndContext,
   closestCenter,
   DragEndEvent,
   DragStartEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 
-import { TestPlanRow } from "./TestplanRow";
 import { TestPlanOverlay } from "./TestPlanOverlay";
+import { TestPlanSection } from "./TestPlanSection";
 
-import { addRowToSection, isObjectOfTypeStep, isStepVisible, moveRow } from "./utils";
+import {
+  addRowToSection,
+  isObjectOfTypeStep,
+  moveRow,
+} from "./utils";
 
 import { Step, TestStepSection } from "./types";
 
@@ -158,7 +156,9 @@ export const TestPlanEditor = ({
   return (
     <DndContext
       collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
+      onDragStart={(e) => {
+        handleDragStart(e);
+      }}
       onDragOver={(e) => {
         setRowIdToShowBorder(String(e.over!.id));
       }}
@@ -171,83 +171,20 @@ export const TestPlanEditor = ({
         }}
       >
         {stepsData.map((section) => (
-          <SortableContext
-            key={section.id}
-            items={section.steps.map((step) => step.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div
-              className="border border-white rounded-md p-2 mb-2 max-h-100 overflow-auto"
-              onPaste={(e) => handlePaste(e, section.id)}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <div className={styles.sectionDescription}>
-                  <h6>{section.id}</h6>
-                  <ul>
-                    {section.descriptionPoints.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
-                </div>
-                <VscodeButton
-                  className="p-1 rounded-sm"
-                  type="button"
-                  onClick={() => handleAddRow(section.id, null)}
-                >
-                  Add Row
-                </VscodeButton>
-              </div>
-              {section.steps.map((step, index) => {
-                const doesHaveNestedChildren = section.steps[index + 1]
-                  ? section.steps[index + 1].nestedLevel > step.nestedLevel
-                  : false;
-
-                const isActiveRow = activeRow?.id === step.id;
-                const shouldShowBorderBottom = rowIdToShowBorder === step.id;
-
-                if (!isStepVisible(step, index, section.steps, collapsedSteps)) {
-                  return null;
-                }
-
-                return (
-                  <div
-                    className={clsx("flex items-center", {
-                      ["asfds"]: shouldShowBorderBottom,
-                    })}
-                    key={step.id}
-                  >
-                    {doesHaveNestedChildren ? (
-                      <div
-                        className="cursor-pointer w-1.5 mr-1"
-                        onClick={() => toggleCollapse(step.id)}
-                      >
-                        {collapsedSteps.includes(step.id) ? <p>+</p> : <p>-</p>}
-                      </div>
-                    ) : (
-                      <div className="w-1.5 mr-1" />
-                    )}
-                    <div
-                      className={clsx({
-                        ["border border-blue-700 rounded-lg"]: isActiveRow,
-                        ["border-b border-amber-700 pb-0.5"]:
-                          shouldShowBorderBottom,
-                      })}
-                    >
-                      <TestPlanRow
-                        key={step.id}
-                        step={step}
-                        sectionId={section.id}
-                        handleDeleteRow={handleDeleteRow}
-                        handleDuplicateRow={handleDuplicateRow}
-                        handleEditCell={handleEditCell}
-                        handleRowClick={handleRowClick}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </SortableContext>
+          <TestPlanSection
+key={section.id}
+            section={section}
+            activeRow={activeRow}
+            collapsedSteps={collapsedSteps}
+            rowIdToShowBorder={rowIdToShowBorder}
+            handleAddRow={handleAddRow}
+            handlePaste={handlePaste}
+            handleDeleteRow={handleDeleteRow}
+            handleDuplicateRow={handleDuplicateRow}
+            handleRowClick={handleRowClick}
+            handleEditCell={handleEditCell}
+            toggleCollapse={toggleCollapse}
+          />
         ))}
       </div>
       <TestPlanOverlay draggedItem={draggedItem} />

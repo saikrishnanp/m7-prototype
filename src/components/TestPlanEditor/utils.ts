@@ -46,11 +46,6 @@ export const getMovedRowWithNestedLevel = (
     overStepIndex - 1 >= 0
       ? targetSection.steps[overStepIndex - 1].nestedLevel
       : 0;
-  console.log(
-    overStepIndex,
-    targetSection.steps[overStepIndex - 1],
-    nestedLevel
-  );
 
   return { ...movedRow, nestedLevel };
 };
@@ -100,7 +95,6 @@ export const moveRow = (
     targetSection,
     updatedOverStepIdx
   );
-
 
   targetSection.steps.splice(updatedOverStepIdx, 0, movedRowWithNestedLevel);
 
