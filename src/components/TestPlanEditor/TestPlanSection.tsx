@@ -17,7 +17,7 @@ import styles from "./TestPlanEditor.module.scss";
 
 interface ITestPlanSectionProps {
   section: TestStepSection;
-  activeRow: Step | null;
+  activeRows: Step[] | null;
   collapsedSteps: string[];
   rowIdToShowBorder: string | null;
   isFullScreen: boolean;
@@ -39,12 +39,12 @@ interface ITestPlanSectionProps {
     value: string | boolean
   ) => void;
   toggleCollapse: (stepId: string) => void;
-  handleRowClick: (row: Step) => void;
+  handleRowClick: (row: Step, e: React.MouseEvent) => void;
 }
 
 export const TestPlanSection = ({
   section,
-  activeRow,
+  activeRows,
   collapsedSteps,
   rowIdToShowBorder,
   isFullScreen,
@@ -126,7 +126,7 @@ export const TestPlanSection = ({
                   section.steps[currentStepIndex + 1]?.nestedLevel >
                   step.nestedLevel;
 
-                const isActiveRow = activeRow?.id === step.id;
+                const isActiveRow = activeRows?.map(row => row.id).includes(step.id);
                 const shouldShowBorderBottom = rowIdToShowBorder === step.id;
                 const isRowVisible = isStepVisible(
                   step,
@@ -168,7 +168,7 @@ export const TestPlanSection = ({
                         key={step.id}
                         step={step}
                         sectionId={section.id}
-                        isRowActive={isActiveRow}
+                        isRowActive={Boolean(isActiveRow)}
                         handleDeleteRow={handleDeleteRow}
                         handleDuplicateRow={handleDuplicateRow}
                         handleEditCell={handleEditCell}

@@ -13,7 +13,7 @@ import { Fullscreen, CloseFullscreen } from "@mui/icons-material";
 import { TestPlanOverlay } from "./TestPlanOverlay";
 import { TestPlanSection } from "./TestPlanSection";
 
-import { addRowToSection, isObjectOfTypeStep, moveRow } from "./utils";
+import { addRowToSection, isListOfTypeStep, moveRow } from "./utils";
 
 import { Step, TestStepSection } from "./types";
 
@@ -27,12 +27,12 @@ export const TestPlanEditor = ({
   const [stepsData, setStepsData] = useState<TestStepSection[]>(testSteps);
   const [draggedItem, setDraggedItem] = useState<Step | null>(null);
   const [collapsedSteps, setCollapsedSteps] = useState<string[]>([]);
-  const [activeRow, setActiveRow] = useState<Step | null>(null);
+  const [activeRows, setActiveRows] = useState<Step[]>([]);
   const [rowIdToShowBorder, setRowIdToShowBorder] = useState<string | null>(
     null
   );
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const copiedRowRef = useRef<Step | null>(null);
+  const copiedRowRef = useRef<Step[]>([]);
 
   const handleDeleteRow = (sectionId: string, rowId: string) => {
     setStepsData((prevSteps) =>
@@ -52,7 +52,8 @@ export const TestPlanEditor = ({
     stepData: Step | null,
     insertNextToRowId: string | null = null
   ) => {
-    const insertNextToRow = insertNextToRowId ?? activeRow?.id ?? null;
+    const insertNextToRow =
+      insertNextToRowId ?? activeRows[activeRows.length - 1].id ?? null;
 
     setStepsData((prevSteps) =>
       addRowToSection(prevSteps, sectionId, stepData, insertNextToRow)
@@ -110,8 +111,23 @@ export const TestPlanEditor = ({
     );
   };
 
-  const handleRowClick = (row: Step | null) => {
-    setActiveRow(row);
+  const handleRowClick = (row: Step, e: React.MouseEvent) => {
+    console.log(e.ctrlKey, e.shiftKey, row.id);
+    if (!e.ctrlKey) {
+      return setActiveRows((prev) => {
+        if (prev.map((item) => item.id).includes(row.id)) {
+          return prev.filter((item) => item.id !== row.id);
+        }
+        return [row];
+      });
+    }
+
+    setActiveRows((prev) => {
+      if (prev.map((item) => item.id).includes(row.id)) {
+        return prev.filter((item) => item.id !== row.id);
+      }
+      return [...prev, row];
+    });
   };
 
   const handlePaste = (event: React.ClipboardEvent, sectionId: string) => {
@@ -120,10 +136,13 @@ export const TestPlanEditor = ({
     const pastedText = event.clipboardData.getData("text/plain");
 
     try {
-      const pastedData = JSON.parse(pastedText);
+      const pastedData = JSON.parse(pastedText) as Step[];
+      console.log(pastedData, typeof pastedData, " asf");
 
-      if (isObjectOfTypeStep(pastedData)) {
-        handleAddRow(sectionId, { ...pastedData, id: uuid() } as Step);
+      if (isListOfTypeStep(pastedData)) {
+        pastedData.forEach((step) => {
+          handleAddRow(sectionId, { ...step, id: uuid() });
+        });
       }
     } catch (error) {
       console.debug("Invalid JSON data pasted:", error);
@@ -132,12 +151,12 @@ export const TestPlanEditor = ({
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === "c" && activeRow) {
-        copiedRowRef.current = { ...activeRow, id: uuid() };
-        copy(JSON.stringify({ ...activeRow, id: uuid() }));
+      if (event.ctrlKey && event.key === "c" && activeRows) {
+        copiedRowRef.current = [...activeRows];
+        copy(JSON.stringify(activeRows));
       }
     },
-    [activeRow]
+    [activeRows]
   );
 
   const handleDuplicateRow = (step: Step, sectionId: string) => {
@@ -150,53 +169,61 @@ export const TestPlanEditor = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeRow, handleKeyDown]);
+  }, [activeRows, handleKeyDown]);
 
   return (
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragStart={(e) => {
-          handleDragStart(e);
-        }}
-        onDragOver={(e) => {
-          setRowIdToShowBorder(String(e.over!.id));
-        }}
-        onDragEnd={handleDragEnd}
-      >
-        <div
-          className={clsx(styles.container, {
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={(e) => {
+        handleDragStart(e);
+      }}
+      onDragOver={(e) => {
+        setRowIdToShowBorder(String(e.over!.id));
+      }}
+      onDragEnd={handleDragEnd}
+    >
+      <div
+        className={clsx(
+          styles.container,
+          {
             [styles.fullScreen]: isFullScreen,
-          }, "p-10")}
-          onClick={() => {
-            setActiveRow(null);
-          }}
+          },
+          "p-10"
+        )}
+        onClick={() => {
+          setActiveRows([]);
+        }}
+      >
+        <button
+          type="button"
+          className={styles.expandButton}
+          onClick={() => setIsFullScreen((prev) => !prev)}
         >
-          <button
-            type="button"
-            className={styles.expandButton}
-            onClick={() => setIsFullScreen((prev) => !prev)}
-          >
-            {isFullScreen ? <CloseFullscreen className={styles.screenIcon}/> : <Fullscreen className={styles.screenIcon}/>}
-          </button>
-          {stepsData.map((section) => (
-            <TestPlanSection
-              key={section.id}
-              section={section}
-              activeRow={activeRow}
-              isFullScreen={isFullScreen}
-              collapsedSteps={collapsedSteps}
-              rowIdToShowBorder={rowIdToShowBorder}
-              handleAddRow={handleAddRow}
-              handlePaste={handlePaste}
-              handleDeleteRow={handleDeleteRow}
-              handleDuplicateRow={handleDuplicateRow}
-              handleRowClick={handleRowClick}
-              handleEditCell={handleEditCell}
-              toggleCollapse={toggleCollapse}
-            />
-          ))}
-        </div>
-        <TestPlanOverlay draggedItem={draggedItem} />
-      </DndContext>
+          {isFullScreen ? (
+            <CloseFullscreen className={styles.screenIcon} />
+          ) : (
+            <Fullscreen className={styles.screenIcon} />
+          )}
+        </button>
+        {stepsData.map((section) => (
+          <TestPlanSection
+            key={section.id}
+            section={section}
+            activeRows={activeRows}
+            isFullScreen={isFullScreen}
+            collapsedSteps={collapsedSteps}
+            rowIdToShowBorder={rowIdToShowBorder}
+            handleAddRow={handleAddRow}
+            handlePaste={handlePaste}
+            handleDeleteRow={handleDeleteRow}
+            handleDuplicateRow={handleDuplicateRow}
+            handleRowClick={handleRowClick}
+            handleEditCell={handleEditCell}
+            toggleCollapse={toggleCollapse}
+          />
+        ))}
+      </div>
+      <TestPlanOverlay draggedItem={draggedItem} />
+    </DndContext>
   );
 };

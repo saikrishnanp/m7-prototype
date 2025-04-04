@@ -25,7 +25,7 @@ interface ITestPlanRowProps {
   ) => void;
   handleDeleteRow: (sectionId: string, rowId: string) => void;
   handleDuplicateRow: (step: Step, sectionId: string) => void;
-  handleRowClick: (row: Step) => void;
+  handleRowClick: (row: Step, e: React.MouseEvent) => void;
 }
 
 export const TestPlanRow = ({
@@ -61,10 +61,15 @@ export const TestPlanRow = ({
       className={clsx("flex items-center", styles.row)}
       onClick={(e) => {
         e.stopPropagation();
-        handleRowClick(step);
+        handleRowClick(step, e);
       }}
       onBlur={() => setFocusedInput(null)}
     >
+      <input
+        type="checkbox"
+        className={clsx(styles.selectCheckbox)}
+        checked={isRowActive}
+      />
       <div
         className={styles.nestedLevelGap}
         style={{ width: `${nestedLevel * 10}px` }}

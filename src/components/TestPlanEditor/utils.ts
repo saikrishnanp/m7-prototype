@@ -50,19 +50,22 @@ export const getMovedRowWithNestedLevel = (
   return { ...movedRow, nestedLevel };
 };
 
-export const isObjectOfTypeStep = (obj: unknown): obj is Step => {
-  if (obj) {
-    return (
-      typeof obj === "object" &&
-      "id" in obj &&
-      "name" in obj &&
-      "typeOfTest" in obj &&
-      "inOrOut" in obj &&
-      "onOrOff" in obj &&
-      "includedInDataSheet" in obj &&
-      "nestedLevel" in obj
+export const isListOfTypeStep = (obj: unknown): obj is Step[] => {
+  if (Array.isArray(obj)) {
+    return obj.every(
+      (item) =>
+        typeof item === "object" &&
+        item !== null &&
+        "id" in item &&
+        "name" in item &&
+        "typeOfTest" in item &&
+        "inOrOut" in item &&
+        "onOrOff" in item &&
+        "includedInDataSheet" in item &&
+        "nestedLevel" in item
     );
   }
+
   return false;
 };
 
