@@ -113,9 +113,14 @@ export const TestPlanSection = ({
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const step = visibleSteps[virtualRow.index];
 
+              const currentStepIndex = section.steps.findIndex(
+                (s) => s.id === step.id
+              );
+
               const doesHaveNestedChildren =
-                section.steps[virtualRow.index + 1]?.nestedLevel >
+                section.steps[currentStepIndex + 1]?.nestedLevel >
                 step.nestedLevel;
+
               const isActiveRow = activeRow?.id === step.id;
               const shouldShowBorderBottom = rowIdToShowBorder === step.id;
               const isRowVisible = isStepVisible(
