@@ -20,6 +20,7 @@ interface ITestPlanSectionProps {
   activeRow: Step | null;
   collapsedSteps: string[];
   rowIdToShowBorder: string | null;
+  isFullScreen: boolean;
   handlePaste: (
     e: React.ClipboardEvent<HTMLDivElement>,
     sectionId: string
@@ -46,6 +47,7 @@ export const TestPlanSection = ({
   activeRow,
   collapsedSteps,
   rowIdToShowBorder,
+  isFullScreen,
   handlePaste,
   handleAddRow,
   handleDeleteRow,
@@ -69,112 +71,115 @@ export const TestPlanSection = ({
   });
 
   return (
-    <SortableContext
-      key={section.id}
-      items={visibleSteps.map((step) => step.id)}
-      strategy={verticalListSortingStrategy}
-    >
-      <div
-        className="border border-white rounded-md p-2 mb-2 w-xl"
-        onPaste={(e) => handlePaste(e, section.id)}
+      <SortableContext
+        key={section.id}
+        items={visibleSteps.map((step) => step.id)}
+        strategy={verticalListSortingStrategy}
       >
-        <div className="flex justify-between items-center mb-2">
-          <div className={styles.sectionDescription}>
-            <h6>{section.id}</h6>
-            <ul>
-              {section.descriptionPoints.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-          </div>
-          <VscodeButton
-            className="p-1 rounded-sm"
-            type="button"
-            onClick={() => handleAddRow(section.id, null)}
-          >
-            Add Row
-          </VscodeButton>
-        </div>
-
         <div
-          ref={parentRef}
-          style={{
-            height: "300px", // Adjust height based on your container
-            overflowY: "auto", // Enable vertical scrolling
-            overflowX: "hidden", // Prevent horizontal scrolling
-          }}
+          className={clsx("border border-white rounded-md p-2 mb-2", {
+            ["w-xl"]: !isFullScreen,
+            ["w-full"]: isFullScreen
+          })}
+          onPaste={(e) => handlePaste(e, section.id)}
         >
+          <div className="flex justify-between items-center mb-2">
+            <div className={styles.sectionDescription}>
+              <h6>{section.id}</h6>
+              <ul>
+                {section.descriptionPoints.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+            </div>
+            <VscodeButton
+              className="p-1 rounded-sm"
+              type="button"
+              onClick={() => handleAddRow(section.id, null)}
+            >
+              Add Row
+            </VscodeButton>
+          </div>
+
           <div
+            ref={parentRef}
             style={{
-              height: `${rowVirtualizer.getTotalSize()}px`, // Total height of the virtualized list
-              position: "relative",
+              height: "300px", // Adjust height based on your container
+              overflowY: "auto", // Enable vertical scrolling
+              overflowX: "hidden", // Prevent horizontal scrolling
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const step = visibleSteps[virtualRow.index];
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`, // Total height of the virtualized list
+                position: "relative",
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const step = visibleSteps[virtualRow.index];
 
-              const currentStepIndex = section.steps.findIndex(
-                (s) => s.id === step.id
-              );
+                const currentStepIndex = section.steps.findIndex(
+                  (s) => s.id === step.id
+                );
 
-              const doesHaveNestedChildren =
-                section.steps[currentStepIndex + 1]?.nestedLevel >
-                step.nestedLevel;
+                const doesHaveNestedChildren =
+                  section.steps[currentStepIndex + 1]?.nestedLevel >
+                  step.nestedLevel;
 
-              const isActiveRow = activeRow?.id === step.id;
-              const shouldShowBorderBottom = rowIdToShowBorder === step.id;
-              const isRowVisible = isStepVisible(
-                step,
-                virtualRow.index,
-                section.steps,
-                collapsedSteps
-              );
+                const isActiveRow = activeRow?.id === step.id;
+                const shouldShowBorderBottom = rowIdToShowBorder === step.id;
+                const isRowVisible = isStepVisible(
+                  step,
+                  virtualRow.index,
+                  section.steps,
+                  collapsedSteps
+                );
 
-              return (
-                <div
-                  key={step.id}
-                  className={clsx("flex items-center", {
-                    ["border-b border-amber-600"]: shouldShowBorderBottom,
-                    ["hidden"]: !isRowVisible,
-                  })}
-                  style={{
-                    position: "absolute",
-                    top: `${virtualRow.start}px`,
-                    left: 0,
-                    width: "100%",
-                  }}
-                >
-                  {doesHaveNestedChildren ? (
-                    <div
-                      className="cursor-pointer w-1.5 mr-1"
-                      onClick={() => toggleCollapse(step.id)}
-                    >
-                      {collapsedSteps.includes(step.id) ? <p>+</p> : <p>-</p>}
-                    </div>
-                  ) : (
-                    <div className="w-1.5 mr-1" />
-                  )}
+                return (
                   <div
-                    className={clsx({
-                      ["border border-blue-700 rounded-lg"]: isActiveRow,
+                    key={step.id}
+                    className={clsx("flex items-center", {
+                      ["border-b border-amber-600"]: shouldShowBorderBottom,
+                      ["hidden"]: !isRowVisible,
                     })}
+                    style={{
+                      position: "absolute",
+                      top: `${virtualRow.start}px`,
+                      left: 0,
+                      width: "100%",
+                    }}
                   >
-                    <TestPlanRow
-                      key={step.id}
-                      step={step}
-                      sectionId={section.id}
-                      handleDeleteRow={handleDeleteRow}
-                      handleDuplicateRow={handleDuplicateRow}
-                      handleEditCell={handleEditCell}
-                      handleRowClick={handleRowClick}
-                    />
+                    {doesHaveNestedChildren ? (
+                      <div
+                        className="cursor-pointer w-1.5 mr-1"
+                        onClick={() => toggleCollapse(step.id)}
+                      >
+                        {collapsedSteps.includes(step.id) ? <p>+</p> : <p>-</p>}
+                      </div>
+                    ) : (
+                      <div className="w-1.5 mr-1" />
+                    )}
+                    <div
+                      className={clsx({
+                        ["border border-blue-700 rounded-lg"]: isActiveRow,
+                      })}
+                    >
+                      <TestPlanRow
+                        key={step.id}
+                        step={step}
+                        sectionId={section.id}
+                        handleDeleteRow={handleDeleteRow}
+                        handleDuplicateRow={handleDuplicateRow}
+                        handleEditCell={handleEditCell}
+                        handleRowClick={handleRowClick}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </SortableContext>
+      </SortableContext>
   );
 };

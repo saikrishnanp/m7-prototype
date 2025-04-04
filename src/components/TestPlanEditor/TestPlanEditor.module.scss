@@ -41,10 +41,6 @@ h3, ul {
   max-width: 150px;
 }
 
-.container {
-  min-height: 10px;
-}
-
 .sectionDescription {
   text-align: left;
 }
@@ -61,5 +57,33 @@ ul {
 .row:hover {
   .deleteButton, .duplicateButton {
     visibility: visible !important;
+  }
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  min-height: 10px;
+}
+
+.container.fullScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+}
+
+.expandButton {
+  position: absolute;
+  top: 0px;
+  right: 5px;
+  z-index: 9999;
+  font-size: 12px;
+
+  svg {
+    width: 18px;
+    height: 18px;
   }
 }

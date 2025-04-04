@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { v4 as uuid } from "uuid";
 import copy from "copy-to-clipboard";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -7,15 +8,12 @@ import {
   DragEndEvent,
   DragStartEvent,
 } from "@dnd-kit/core";
+import { Fullscreen, CloseFullscreen } from "@mui/icons-material";
 
 import { TestPlanOverlay } from "./TestPlanOverlay";
 import { TestPlanSection } from "./TestPlanSection";
 
-import {
-  addRowToSection,
-  isObjectOfTypeStep,
-  moveRow,
-} from "./utils";
+import { addRowToSection, isObjectOfTypeStep, moveRow } from "./utils";
 
 import { Step, TestStepSection } from "./types";
 
@@ -33,6 +31,7 @@ export const TestPlanEditor = ({
   const [rowIdToShowBorder, setRowIdToShowBorder] = useState<string | null>(
     null
   );
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const copiedRowRef = useRef<Step | null>(null);
 
   const handleDeleteRow = (sectionId: string, rowId: string) => {
@@ -154,40 +153,50 @@ export const TestPlanEditor = ({
   }, [activeRow, handleKeyDown]);
 
   return (
-    <DndContext
-      collisionDetection={closestCenter}
-      onDragStart={(e) => {
-        handleDragStart(e);
-      }}
-      onDragOver={(e) => {
-        setRowIdToShowBorder(String(e.over!.id));
-      }}
-      onDragEnd={handleDragEnd}
-    >
-      <div
-        className={styles.container}
-        onClick={() => {
-          setActiveRow(null);
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragStart={(e) => {
+          handleDragStart(e);
         }}
+        onDragOver={(e) => {
+          setRowIdToShowBorder(String(e.over!.id));
+        }}
+        onDragEnd={handleDragEnd}
       >
-        {stepsData.map((section) => (
-          <TestPlanSection
-key={section.id}
-            section={section}
-            activeRow={activeRow}
-            collapsedSteps={collapsedSteps}
-            rowIdToShowBorder={rowIdToShowBorder}
-            handleAddRow={handleAddRow}
-            handlePaste={handlePaste}
-            handleDeleteRow={handleDeleteRow}
-            handleDuplicateRow={handleDuplicateRow}
-            handleRowClick={handleRowClick}
-            handleEditCell={handleEditCell}
-            toggleCollapse={toggleCollapse}
-          />
-        ))}
-      </div>
-      <TestPlanOverlay draggedItem={draggedItem} />
-    </DndContext>
+        <div
+          className={clsx(styles.container, {
+            [styles.fullScreen]: isFullScreen,
+          }, "p-10")}
+          onClick={() => {
+            setActiveRow(null);
+          }}
+        >
+          <button
+            type="button"
+            className={styles.expandButton}
+            onClick={() => setIsFullScreen((prev) => !prev)}
+          >
+            {isFullScreen ? <CloseFullscreen className={styles.screenIcon}/> : <Fullscreen className={styles.screenIcon}/>}
+          </button>
+          {stepsData.map((section) => (
+            <TestPlanSection
+              key={section.id}
+              section={section}
+              activeRow={activeRow}
+              isFullScreen={isFullScreen}
+              collapsedSteps={collapsedSteps}
+              rowIdToShowBorder={rowIdToShowBorder}
+              handleAddRow={handleAddRow}
+              handlePaste={handlePaste}
+              handleDeleteRow={handleDeleteRow}
+              handleDuplicateRow={handleDuplicateRow}
+              handleRowClick={handleRowClick}
+              handleEditCell={handleEditCell}
+              toggleCollapse={toggleCollapse}
+            />
+          ))}
+        </div>
+        <TestPlanOverlay draggedItem={draggedItem} />
+      </DndContext>
   );
 };
