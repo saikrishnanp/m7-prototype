@@ -12,6 +12,7 @@ export const TestPlanOverlay = ({ draggedItem }: ITestPlanOverlayProps) => {
     <DragOverlay>
       {draggedItem && (
         <TestPlanRow
+          isRowActive={false}
           step={draggedItem}
           sectionId={draggedItem.id}
           handleDeleteRow={() => {}}

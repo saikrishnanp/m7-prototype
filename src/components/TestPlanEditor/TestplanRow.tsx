@@ -1,13 +1,18 @@
+import {
+  Combobox,
+  ComboboxButton,
+  ComboboxInput,
+  ComboboxOption,
+  ComboboxOptions,
+} from "@headlessui/react";
 import clsx from "clsx";
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { IconButton } from "@mui/material";
-import {
-  VscodeOption,
-  VscodeSingleSelect,
-  VscodeCheckbox,
-} from "@vscode-elements/react-elements";
+import { VscodeCheckbox } from "@vscode-elements/react-elements";
 import { Delete, DragIndicator, FileCopy } from "@mui/icons-material";
+
+import chevron from "src/assets/chevronIcon.svg";
 
 import { Step, TypeOfTestEnum } from "./types";
 
@@ -38,6 +43,7 @@ export const TestPlanRow = ({
   isRowActive,
 }: ITestPlanRowProps) => {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [typeOfTestfilter, setTOTFilter] = useState<string>("");
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -54,6 +60,10 @@ export const TestPlanRow = ({
 
   const nestedLevel = step.nestedLevel || 0;
 
+  const filteredToTValues = Object.values(TypeOfTestEnum).filter((type) =>
+    type.toLowerCase().includes(typeOfTestfilter.toLowerCase())
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -69,6 +79,7 @@ export const TestPlanRow = ({
         type="checkbox"
         className={clsx(styles.selectCheckbox)}
         checked={isRowActive}
+        onChange={() => {}}
       />
       <div
         className={styles.nestedLevelGap}
@@ -79,9 +90,11 @@ export const TestPlanRow = ({
       <div {...listeners} {...attributes} className="cursor-grab" title="Drag">
         <DragIndicator />
       </div>
-      <div className={clsx("flex flex-row rounded-sm", {
-        ["border border-gray-400"]: focusedInput === "name" && isRowActive,
-      })}>
+      <div
+        className={clsx("flex flex-row rounded-sm", {
+          ["border border-gray-400"]: focusedInput === "name" && isRowActive,
+        })}
+      >
         {focusedInput && isRowActive && <p>type</p>}
         <input
           defaultValue={step.name}
@@ -105,23 +118,39 @@ export const TestPlanRow = ({
           />
         )}
       </div>
-      <div className="flex flex-row">
-        <VscodeSingleSelect
-          className={clsx("pl-1", styles.selectField, "rounded-xl")}
+      <div className={clsx(styles.textFieldCont, "flex flex-row")}>
+        <Combobox
           value={step.typeOfTest}
-          onFocus={() => setFocusedInput("typeOfTest")}
           onChange={(e) => {
-            const target = e.target as HTMLSelectElement;
-            handleEditCell(sectionId, step.id, "typeOfTest", target.value);
+            handleEditCell(sectionId, step.id, "typeOfTest", e!);
           }}
+          onClose={() => setTOTFilter("")}
         >
-          <VscodeOption value={TypeOfTestEnum.NORMAL}>
-            {TypeOfTestEnum.NORMAL}
-          </VscodeOption>
-          <VscodeOption value={TypeOfTestEnum.LOAD}>
-            {TypeOfTestEnum.LOAD}
-          </VscodeOption>
-        </VscodeSingleSelect>
+          <ComboboxButton className="flex flex-row">
+            <ComboboxInput
+              displayValue={(step: string) => {
+                return step;
+              }}
+              className={clsx(styles.textField, "border-none")}
+              onChange={(event) => setTOTFilter(event.target.value)}
+            />
+            <img className={styles.chevIcon} src={chevron} alt="chevron" />
+          </ComboboxButton>
+          <ComboboxOptions
+            anchor="bottom"
+            className="border border-gray-400 bg-amber-50"
+          >
+            {filteredToTValues.map((type) => (
+              <ComboboxOption
+                key={type}
+                value={type}
+                className="data-[focus]:bg-blue-100"
+              >
+                {type}
+              </ComboboxOption>
+            ))}
+          </ComboboxOptions>
+        </Combobox>
         {focusedInput && isRowActive && (
           <div className="flex flex-row">
             <p>

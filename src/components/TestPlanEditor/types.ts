@@ -8,6 +8,11 @@ export enum StepsEnum {
 export enum TypeOfTestEnum {
   NORMAL = "Normal",
   LOAD = "Load",
+  STRESS = "Stress",
+  PERFORMANCE = "Performance",
+  FUNCTIONAL = "Functional",
+  STATISTICAL = "Statistical",
+  REGRESSION = "Regression",
 }
 
 export enum InOrOutEnum {
