@@ -20,23 +20,23 @@ import {
 import { RootState } from "src/redux/store";
 
 import { TestPlanOverlay } from "./TestPlanOverlay";
-import { TestPlanSection } from "./TestPlanSection";
+import { TestPlanBlock } from "./TestPlanBlock";
 
 import { isListOfTypeStep } from "./utils";
 
-import { Step } from "./types";
+import { TestStep, TestStepType } from "./types";
 
 import styles from "./TestPlanEditor.module.scss";
 
 export const TestPlanEditor = () => {
-  const [draggedItem, setDraggedItem] = useState<Step | null>(null);
+  const [draggedItem, setDraggedItem] = useState<TestStep | null>(null);
   const [collapsedSteps, setCollapsedSteps] = useState<string[]>([]);
-  const [activeRows, setActiveRows] = useState<Step[]>([]);
+  const [activeRows, setActiveRows] = useState<TestStep[]>([]);
   const [rowIdToShowBorder, setRowIdToShowBorder] = useState<string | null>(
     null
   );
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const copiedRowRef = useRef<Step[]>([]);
+  const copiedRowRef = useRef<TestStep[]>([]);
 
   const dispatch = useDispatch();
 
@@ -55,7 +55,7 @@ export const TestPlanEditor = () => {
 
   const handleAddRow = (
     sectionId: string,
-    stepData: Step | null,
+    stepData: TestStep | null,
     insertNextToRowId: string | null = null
   ) => {
     const insertNextToRow =
@@ -82,7 +82,7 @@ export const TestPlanEditor = () => {
   const handleDragStart = (event: DragStartEvent) => {
     const id = event.active.id;
     const item = stepsData
-      .flatMap((section) => section.steps)
+      .flatMap((section) => section.test.testSteps)
       .find((step) => step.id === id);
     setDraggedItem(item ?? null);
   };
@@ -110,7 +110,7 @@ export const TestPlanEditor = () => {
     );
   };
 
-  const handleRowClick = (row: Step, e: React.MouseEvent) => {
+  const handleRowClick = (row: TestStep, e: React.MouseEvent) => {
     if (!e.ctrlKey) {
       return setActiveRows((prev) => {
         if (prev.map((item) => item.id).includes(row.id)) {
@@ -134,7 +134,7 @@ export const TestPlanEditor = () => {
     const pastedText = event.clipboardData.getData("text/plain");
 
     try {
-      const pastedData = JSON.parse(pastedText) as Step[];
+      const pastedData = JSON.parse(pastedText) as TestStep[];
 
       if (isListOfTypeStep(pastedData)) {
         pastedData.forEach((step) => {
@@ -157,8 +157,8 @@ export const TestPlanEditor = () => {
     [activeRows]
   );
 
-  const handleDuplicateRow = (step: Step, sectionId: string) => {
-    const newStep = { ...step, id: uuid() };
+  const handleDuplicateRow = (step: TestStep, sectionId: string) => {
+    const newStep = { ...step, id: uuid() } as TestStepType;
     handleAddRow(sectionId, newStep, step.id);
   };
 
@@ -203,10 +203,10 @@ export const TestPlanEditor = () => {
             <Fullscreen className={styles.screenIcon} />
           )}
         </button>
-        {stepsData.map((section) => (
-          <TestPlanSection
-            key={section.id}
-            section={section}
+        {stepsData.map((block) => (
+          <TestPlanBlock
+            key={block.id}
+            block={block}
             activeRows={activeRows}
             isFullScreen={isFullScreen}
             collapsedSteps={collapsedSteps}

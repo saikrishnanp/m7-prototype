@@ -1,98 +1,145 @@
 import { v4 as uuid } from "uuid";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-  InOrOutEnum,
-  Step,
-  TestStepSection,
-  TypeOfTestEnum,
+  TestStep,
+  TestStepActionEnum,
+  TestStepBlock,
+  TestStepPinEnum,
+  TestStepResourceEnum,
+  TestStepSubActionEnum,
 } from "src/components/TestPlanEditor/types";
 import {
   findStepIndices,
   getMovedRowWithNestedLevel,
+  isTestStep,
 } from "src/components/TestPlanEditor/utils";
 
-const placeHolderStep = {
+const placeHolderStep: TestStep = {
   id: uuid(),
-  name: "New Step",
-  typeOfTest: TypeOfTestEnum.NORMAL,
-  inOrOut: InOrOutEnum.INPUT,
-  onOrOff: false,
-  includedInDataSheet: true,
+  type: "test",
+  action: TestStepActionEnum.FV,
+  subAction: TestStepSubActionEnum.NORMAL,
+  pin: "pin1",
+  resource: "resource",
   nestedLevel: 0,
+  settings: [],
+  selected: false,
+  errored: false,
 };
 
-const dummySteps = new Array(1000).fill(null).map((_, index) => ({
-  ...placeHolderStep,
-  id: uuid(),
-  name: `Step ${index++}`,
-  typeOfTest: index % 3 == 0 ? TypeOfTestEnum.NORMAL : TypeOfTestEnum.LOAD,
-  inOrOut: InOrOutEnum.INPUT,
-  onOrOff: index % 2 == 0,
-  includedInDataSheet: index % 4 == 0,
-  nestedLevel: Math.random() > 0.5 ? 0 : 1,
-}));
-
-const initialState: TestStepSection[] = [
+const initialState: TestStepBlock[] = [
   {
-    id: "constant-data-test",
-    descriptionPoints: ["Test that the data is constant"],
-    steps: [
-      {
-        id: "1.1",
-        name: "Step 1 - Constant Data",
-        typeOfTest: TypeOfTestEnum.NORMAL,
-        inOrOut: InOrOutEnum.INPUT,
-        onOrOff: null,
-        includedInDataSheet: true,
-        nestedLevel: 0,
-      },
-      {
-        id: "2.1",
-        name: "Step 2 - CD",
-        typeOfTest: TypeOfTestEnum.LOAD,
-        inOrOut: InOrOutEnum.INPUT,
-        onOrOff: true,
-        includedInDataSheet: true,
-        nestedLevel: 1,
-      },
-      {
-        id: "2.1cd",
-        name: "Step 2.1 - CD",
-        typeOfTest: TypeOfTestEnum.LOAD,
-        inOrOut: InOrOutEnum.INPUT,
-        onOrOff: true,
-        includedInDataSheet: true,
-        nestedLevel: 2,
-      },
-      {
-        id: "2.2cd",
-        name: "Step 2.2 - CD",
-        typeOfTest: TypeOfTestEnum.LOAD,
-        inOrOut: InOrOutEnum.INPUT,
-        onOrOff: true,
-        includedInDataSheet: true,
-        nestedLevel: 1,
-      },
-    ],
-  },
-  {
-    id: "variable-data-test",
-    descriptionPoints: [
-      "Test that the data is variable",
-      "This will act as the load test",
-    ],
-    steps: [
-      {
-        id: "4cd",
-        name: "Step 4",
-        typeOfTest: TypeOfTestEnum.NORMAL,
-        inOrOut: InOrOutEnum.INPUT,
-        onOrOff: true,
-        includedInDataSheet: false,
-        nestedLevel: 0,
-      },
-      ...dummySteps,
-    ],
+    id: "block-1",
+    test: {
+      testParameters: [
+        {
+          name: "Output Voltage",
+          lowLimit: "4.8",
+          highLimit: "5.2",
+          unit: "V",
+        },
+        {
+          name: "Load Current",
+          lowLimit: "0.5",
+          highLimit: "2.0",
+          unit: "A",
+        },
+      ],
+      testInputs: [
+        {
+          name: "Input Voltage",
+          value: "12V",
+        },
+        {
+          name: "Frequency",
+          value: "50Hz",
+        },
+      ],
+      testSteps: [
+        {
+          id: "test-step-1",
+          type: "test",
+          action: TestStepActionEnum.FV,
+          subAction: TestStepSubActionEnum.NORMAL,
+          pin: TestStepPinEnum.IN,
+          resource: TestStepResourceEnum.SMPS,
+          nestedLevel: 0,
+          settings: ["Enable", "Set Voltage to 12V"],
+          selected: true,
+          errored: false,
+        },
+        {
+          id: "test-step-2",
+          type: "test",
+          action: TestStepActionEnum.MEASURE,
+          subAction: TestStepSubActionEnum.FORCE,
+          pin: TestStepPinEnum.OUT,
+          resource: TestStepResourceEnum.OSCILLATOR,
+          nestedLevel: 1,
+          settings: ["Measure Output Voltage"],
+          selected: false,
+          errored: false,
+        },
+        {
+          id: "test-step-1-comment",
+          type: "comment",
+          comment: "Ensure the output voltage is stable before proceeding.",
+        },
+        {
+          id: "test-step-2-comment",
+          type: "comment",
+          comment: "Ensure the input voltage is stable before proceeding.",
+        },
+        {
+          id: "test-step-3",
+          type: "test",
+          action: TestStepActionEnum.MEASURE,
+          subAction: TestStepSubActionEnum.FORCE,
+          pin: TestStepPinEnum.OUT,
+          resource: TestStepResourceEnum.OSCILLATOR,
+          nestedLevel: 1,
+          settings: ["Measure Input Voltage", "Check for noise"],
+          selected: false,
+          errored: false,
+        },
+        {
+          id: "test-step-4",
+          type: "test",
+          action: TestStepActionEnum.MEASURE,
+          subAction: TestStepSubActionEnum.FORCE,
+          pin: TestStepPinEnum.OUT,
+          resource: TestStepResourceEnum.OSCILLATOR,
+          nestedLevel: 2,
+          settings: ["Measure Input Voltage", "Check for noise"],
+          selected: false,
+          errored: false,
+        },
+        {
+          id: "test-step-5",
+          type: "test",
+          action: TestStepActionEnum.MEASURE,
+          subAction: TestStepSubActionEnum.FORCE,
+          pin: TestStepPinEnum.OUT,
+          resource: TestStepResourceEnum.OSCILLATOR,
+          nestedLevel: 2,
+          settings: ["Measure Input Voltage", "Check for noise"],
+          selected: false,
+          errored: false,
+        },
+        {
+          id: "test-step-6",
+          type: "test",
+          action: TestStepActionEnum.MEASURE,
+          subAction: TestStepSubActionEnum.FORCE,
+          pin: TestStepPinEnum.OUT,
+          resource: TestStepResourceEnum.OSCILLATOR,
+          nestedLevel: 0,
+          settings: ["Measure Input Voltage", "Check for noise"],
+          selected: false,
+          errored: false,
+        },
+      ],
+    },
   },
 ];
 
@@ -106,20 +153,25 @@ const testStepsSlice = createSlice({
     ) => {
       const { sectionId, rowId } = action.payload;
 
-      return state.map((section) =>
-        section.id === sectionId
+      return state.map((block) =>
+        block.id === sectionId
           ? {
-              ...section,
-              steps: section.steps.filter((step) => step.id !== rowId),
+              ...block,
+              test: {
+                ...block.test,
+                testSteps: block.test.testSteps.filter(
+                  (step) => step.id !== rowId
+                ),
+              },
             }
-          : section
+          : block
       );
     },
     addStepToSection: (
       state,
       action: PayloadAction<{
         sectionId: string;
-        stepData: Step | null;
+        stepData: TestStep | null;
         insertNextToRowId: string | null;
       }>
     ) => {
@@ -130,35 +182,30 @@ const testStepsSlice = createSlice({
         id: uuid(),
       };
 
-      return state.map((section) => {
-        if (section.id === sectionId) {
-          const activeRowIndex = section.steps.findIndex(
-            (step) => step.id === insertNextToRowId
-          );
+      const block = state.find((block) => block.id === sectionId);
+      if (block) {
+        const activeRowIndex = block.test.testSteps.findIndex(
+          (step) => step.id === insertNextToRowId
+        );
 
-          if (activeRowIndex !== -1) {
-            const updatedSteps = [...section.steps];
-            const previousStep = updatedSteps[activeRowIndex];
-            const nestedLevel = previousStep.nestedLevel;
+        if (activeRowIndex !== -1) {
+          const previousStep = block.test.testSteps[activeRowIndex];
+          const nestedLevel = isTestStep(previousStep)
+            ? previousStep.nestedLevel
+            : 0;
 
-            updatedSteps.splice(activeRowIndex + 1, 0, {
+          if (isTestStep(stepToAdd)) {
+            block.test.testSteps.splice(activeRowIndex + 1, 0, {
               ...stepToAdd,
               nestedLevel,
             });
-
-            return {
-              ...section,
-              steps: updatedSteps,
-            };
+          } else {
+            block.test.testSteps.splice(activeRowIndex + 1, 0, stepToAdd);
           }
-
-          return {
-            ...section,
-            steps: [...section.steps, stepToAdd],
-          };
+        } else {
+          block.test.testSteps.push(stepToAdd);
         }
-        return section;
-      });
+      }
     },
     editStep: (
       state,
@@ -171,15 +218,18 @@ const testStepsSlice = createSlice({
     ) => {
       const { sectionId, rowId, key, value } = action.payload;
 
-      return state.map((section) =>
-        section.id === sectionId
+      return state.map((block) =>
+        block.id === sectionId
           ? {
-              ...section,
-              steps: section.steps.map((step) =>
-                step.id === rowId ? { ...step, [key]: value } : step
-              ),
+              ...block,
+              test: {
+                ...block.test,
+                testSteps: block.test.testSteps.map((step) =>
+                  step.id === rowId ? { ...step, [key]: value } : step
+                ),
+              },
             }
-          : section
+          : block
       );
     },
     moveStep: (
@@ -191,32 +241,30 @@ const testStepsSlice = createSlice({
     ) => {
       const { activeId, overId } = action.payload;
 
-      const { sourceSection, targetSection, activeStepIndex, overStepIndex } =
+      const { sourceBlock, targetBlock, activeStepIndex, overStepIndex } =
         findStepIndices(state, activeId, overId);
 
       if (
-        !sourceSection ||
-        !targetSection ||
+        !sourceBlock ||
+        !targetBlock ||
         activeStepIndex === undefined ||
         overStepIndex === undefined
       ) {
         return state;
       }
 
-      const [movedRow] = sourceSection.steps.splice(activeStepIndex, 1);
+      const [movedRow] = sourceBlock.test.testSteps.splice(activeStepIndex, 1);
 
       const updatedOverStepIdx =
-        sourceSection.id === targetSection.id
-          ? overStepIndex
-          : overStepIndex + 1;
+        sourceBlock.id === targetBlock.id ? overStepIndex : overStepIndex + 1;
 
       const movedRowWithNestedLevel = getMovedRowWithNestedLevel(
         movedRow,
-        targetSection,
+        targetBlock,
         updatedOverStepIdx
       );
 
-      targetSection.steps.splice(
+      targetBlock.test.testSteps.splice(
         updatedOverStepIdx,
         0,
         movedRowWithNestedLevel

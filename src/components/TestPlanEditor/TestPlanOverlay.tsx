@@ -1,10 +1,10 @@
 import { DragOverlay } from "@dnd-kit/core";
 
 import { TestPlanRow } from "./TestplanRow";
-import { Step } from "./types";
+import { TestStep } from "./types";
 
 interface ITestPlanOverlayProps {
-  draggedItem: Step | null;
+  draggedItem: TestStep | null;
 }
 
 export const TestPlanOverlay = ({ draggedItem }: ITestPlanOverlayProps) => {
@@ -14,7 +14,7 @@ export const TestPlanOverlay = ({ draggedItem }: ITestPlanOverlayProps) => {
         <TestPlanRow
           isRowActive={false}
           step={draggedItem}
-          sectionId={draggedItem.id}
+          blockId={draggedItem.id}
           handleDeleteRow={() => {}}
           handleDuplicateRow={() => {}}
           handleEditCell={() => {}}

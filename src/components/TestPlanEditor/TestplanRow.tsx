@@ -1,50 +1,38 @@
-import {
-  Combobox,
-  ComboboxButton,
-  ComboboxInput,
-  ComboboxOption,
-  ComboboxOptions,
-} from "@headlessui/react";
 import clsx from "clsx";
-import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { IconButton } from "@mui/material";
-import { VscodeCheckbox } from "@vscode-elements/react-elements";
 import { Delete, DragIndicator, FileCopy } from "@mui/icons-material";
 
-import chevron from "src/assets/chevronIcon.svg";
-
-import { Step, TypeOfTestEnum } from "./types";
+import { TestStep, TestStepActionEnum } from "./types";
 
 import styles from "./TestPlanEditor.module.scss";
+import { isCommentStep, isTestStep } from "./utils";
+import { ComboboxComponent } from "./ComboboxComponent";
 
 interface ITestPlanRowProps {
-  step: Step;
-  sectionId: string;
+  step: TestStep;
+  blockId: string;
   isRowActive: boolean;
   handleEditCell: (
-    sectionId: string,
+    blockId: string,
     stepId: string,
     key: string,
     value: string | boolean
   ) => void;
-  handleDeleteRow: (sectionId: string, rowId: string) => void;
-  handleDuplicateRow: (step: Step, sectionId: string) => void;
-  handleRowClick: (row: Step, e: React.MouseEvent) => void;
+  handleDeleteRow: (blockId: string, rowId: string) => void;
+  handleDuplicateRow: (step: TestStep, blockId: string) => void;
+  handleRowClick: (row: TestStep, e: React.MouseEvent) => void;
 }
 
 export const TestPlanRow = ({
   step,
-  sectionId,
+  blockId,
   handleDeleteRow,
   handleDuplicateRow,
   handleEditCell,
   handleRowClick,
   isRowActive,
 }: ITestPlanRowProps) => {
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const [typeOfTestfilter, setTOTFilter] = useState<string>("");
-
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: step.id,
@@ -58,11 +46,7 @@ export const TestPlanRow = ({
     transition,
   };
 
-  const nestedLevel = step.nestedLevel || 0;
-
-  const filteredToTValues = Object.values(TypeOfTestEnum).filter((type) =>
-    type.toLowerCase().includes(typeOfTestfilter.toLowerCase())
-  );
+  const nestedLevel = isTestStep(step) ? step.nestedLevel : 0;
 
   return (
     <div
@@ -73,7 +57,6 @@ export const TestPlanRow = ({
         e.stopPropagation();
         handleRowClick(step, e);
       }}
-      onBlur={() => setFocusedInput(null)}
     >
       <input
         type="checkbox"
@@ -87,105 +70,72 @@ export const TestPlanRow = ({
       >
         {" "}
       </div>
-      <div {...listeners} {...attributes} className="cursor-grab" title="Drag">
-        <DragIndicator />
-      </div>
-      <div
-        className={clsx("flex flex-row rounded-sm", {
-          ["border border-gray-400"]: focusedInput === "name" && isRowActive,
-        })}
-      >
-        {focusedInput && isRowActive && <p>type</p>}
-        <input
-          defaultValue={step.name}
-          onFocus={() => setFocusedInput("name")}
-          onBlur={(e) => {
-            handleEditCell(sectionId, step.id, "name", e.target.value);
-          }}
-          className={clsx(styles.textField, {
-            ["underline"]: focusedInput === "name" && isRowActive,
-            [styles.edit]: focusedInput === "name" && isRowActive,
-          })}
-        />
-        {focusedInput && isRowActive && (
-          <input
-            onBlur={(e) => {
-              handleEditCell(sectionId, step.id, "nameUnit", e.target.value);
-            }}
-            type="text"
-            className={clsx(styles.textField, styles.edit)}
-            defaultValue={step.nameUnit}
-          />
-        )}
-      </div>
-      <div className={clsx(styles.textFieldCont, "flex flex-row")}>
-        <Combobox
-          value={step.typeOfTest}
-          onChange={(e) => {
-            handleEditCell(sectionId, step.id, "typeOfTest", e!);
-          }}
-          onClose={() => setTOTFilter("")}
+      {isTestStep(step) && (
+        <div
+          {...listeners}
+          {...attributes}
+          className="cursor-grab"
+          title="Drag"
         >
-          <ComboboxButton className="flex flex-row">
-            <ComboboxInput
-              displayValue={(step: string) => {
-                return step;
+          <DragIndicator />
+        </div>
+      )}
+      {isTestStep(step) && (
+        <>
+          {/* <div className={clsx(styles.textFieldCont, "flex flex-row")}> */}
+          <ComboboxComponent
+            value={step.action}
+            options={Object.values(TestStepActionEnum)}
+            placeholder="Action"
+            onChange={(e) => {
+              handleEditCell(blockId, step.id, "action", e!);
+            }}
+          />
+          {/* </div> */}
+          <div className={clsx(styles.textFieldCont, "flex flex-row")}>
+            <ComboboxComponent
+              value={step.subAction}
+              options={Object.values(TestStepActionEnum)}
+              placeholder="Subaction"
+              onChange={(e) => {
+                handleEditCell(blockId, step.id, "subAction", e!);
               }}
-              className={clsx(styles.textField, "border-none")}
-              onChange={(event) => setTOTFilter(event.target.value)}
             />
-            <img className={styles.chevIcon} src={chevron} alt="chevron" />
-          </ComboboxButton>
-          <ComboboxOptions
-            anchor="bottom"
-            className="border border-gray-400 bg-amber-50"
-          >
-            {filteredToTValues.map((type) => (
-              <ComboboxOption
-                key={type}
-                value={type}
-                className="data-[focus]:bg-blue-100"
-              >
-                {type}
-              </ComboboxOption>
-            ))}
-          </ComboboxOptions>
-        </Combobox>
-        {focusedInput && isRowActive && (
-          <div className="flex flex-row">
-            <p>
-              Dropdown
-            </p>
           </div>
-        )}
-      </div>
-      <div className="flex flex-row">
-        <VscodeCheckbox
-          className="pl-1 ml-2"
-          checked={!!step.onOrOff}
-          onFocus={() => setFocusedInput("onOrOff")}
-          onChange={(e) =>
-            handleEditCell(
-              sectionId,
-              step.id,
-              "onOrOff",
-              (e.target as HTMLInputElement).checked
-            )
-          }
-        />
-        {focusedInput && isRowActive && (
-          <div className="flex flex-row">
-            <p>
-              Checkbox
-            </p>
+          <div className={clsx(styles.textFieldCont, "flex flex-row")}>
+            <input
+              type="text"
+              className={clsx(styles.textField, "border-none")}
+              value={step.pin || ""}
+              placeholder="Pin"
+              onChange={(e) =>
+                handleEditCell(blockId, step.id, "resource", e.target.value)
+              }
+            />
           </div>
-        )}
-      </div>
+          <div className={clsx(styles.textFieldCont, "flex flex-row")}>
+            <input
+              type="text"
+              className={clsx(styles.textField, "border-none")}
+              value={step.resource || ""}
+              placeholder="Resource"
+              onChange={(e) =>
+                handleEditCell(blockId, step.id, "resource", e.target.value)
+              }
+            />
+          </div>
+        </>
+      )}
+      {isCommentStep(step) && (
+        <div className={clsx(styles.commentText, "text-green-700 pl-2")}>
+          {step.comment}
+        </div>
+      )}
       <IconButton
         className={styles.duplicateButton}
         onClick={(e) => {
           e.stopPropagation();
-          handleDuplicateRow(step, sectionId);
+          handleDuplicateRow(step, blockId);
         }}
         color="info"
       >
@@ -193,7 +143,7 @@ export const TestPlanRow = ({
       </IconButton>
       <IconButton
         className={styles.deleteButton}
-        onClick={() => handleDeleteRow(sectionId, step.id)}
+        onClick={() => handleDeleteRow(blockId, step.id)}
         color="error"
       >
         <Delete />

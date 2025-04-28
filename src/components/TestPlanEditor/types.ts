@@ -1,38 +1,68 @@
-export enum StepsEnum {
-  Step1 = "Step 1",
-  Step2 = "Step 2",
-  Step3 = "Step 3",
-  Step4 = "Step 4",
+export enum TestStepActionEnum {
+  FV = "FV",
+  FI = "FI",
+  MEASURE = "Measure",
+  DELAY = "Delay",
 }
 
-export enum TypeOfTestEnum {
+export enum TestStepSubActionEnum {
   NORMAL = "Normal",
-  LOAD = "Load",
-  STRESS = "Stress",
-  PERFORMANCE = "Performance",
-  FUNCTIONAL = "Functional",
-  STATISTICAL = "Statistical",
-  REGRESSION = "Regression",
+  FORCE = "Force",
+  CLAMP = "Clamp",
 }
 
-export enum InOrOutEnum {
-  INPUT = "Input",
-  OUTPUT = "Output",
+export enum TestStepPinEnum {
+  IN = "IN",
+  OUT = "OUT",
+  GND = "GND",
+  VCC = "VCC",
 }
 
-export interface Step {
+export enum TestStepResourceEnum {
+  SMPS = "SMPS",
+  OSCILLATOR = "Oscillator",
+}
+
+export interface CommentStepType {
   id: string;
-  name: string;
-  typeOfTest: TypeOfTestEnum;
-  inOrOut: InOrOutEnum;
-  nameUnit?: string;
-  onOrOff: boolean | null;
-  includedInDataSheet: boolean;
+  comment: string;
+  type: "comment";
+}
+
+export interface TestStepType {
+  id: string;
+  type: "test";
+  action: TestStepActionEnum;
+  subAction: TestStepSubActionEnum;
+  pin: string;
+  resource: string;
   nestedLevel: number;
+  settings: string[];
+  selected: boolean;
+  errored: boolean;
 }
 
-export interface TestStepSection {
+export type TestStep = TestStepType | CommentStepType;
+
+interface TestParameter {
+  name: string;
+  lowLimit: string;
+  highLimit: string;
+  unit: string;
+}
+
+interface TestInput {
+  name: string;
+  value: string;
+}
+
+export interface Test {
+  testParameters: TestParameter[];
+  testInputs: TestInput[];
+  testSteps: TestStep[];
+}
+
+export interface TestStepBlock {
   id: string;
-  descriptionPoints: string[];
-  steps: Step[];
+  test: Test;
 }

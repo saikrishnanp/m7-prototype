@@ -1,65 +1,64 @@
-import { Step, TestStepSection } from "./types";
+import { CommentStepType, TestStep, TestStepBlock, TestStepType } from "./types";
 
-export const findIndex = <T extends { id: string }>(
-  steps: T[],
+export const findIndex = (
+  steps: TestStep[],
   id: string
 ): number => {
-  return steps.findIndex((step) => step.id === id);
+  return steps.findIndex((step) => "id" in step && step.id === id);
 };
 
 export const findStepIndices = (
-  stepsData: TestStepSection[],
+  stepsData: TestStepBlock[],
   activeId: string,
   overId: string
 ) => {
-  let sourceSection: TestStepSection | undefined;
-  let targetSection: TestStepSection | undefined;
+  let sourceBlock: TestStepBlock | undefined;
+  let targetBlock: TestStepBlock | undefined;
   let activeStepIndex: number | undefined;
   let overStepIndex: number | undefined;
 
-  stepsData.forEach((section) => {
-    const activeIndex = findIndex(section.steps, activeId);
-    const overIndex = findIndex(section.steps, overId);
+  stepsData.forEach((block) => {
+    const activeIndex = findIndex(block.test.testSteps, activeId);
+    const overIndex = findIndex(block.test.testSteps, overId);
 
     if (activeIndex !== -1) {
-      sourceSection = section;
+      sourceBlock = block;
       activeStepIndex = activeIndex;
     }
 
     if (overIndex !== -1) {
-      targetSection = section;
+      targetBlock = block;
       overStepIndex = overIndex;
     }
   });
 
-  return { sourceSection, targetSection, activeStepIndex, overStepIndex };
+  return { sourceBlock, targetBlock, activeStepIndex, overStepIndex };
 };
 
 export const getMovedRowWithNestedLevel = (
-  movedRow: Step,
-  targetSection: TestStepSection,
+  movedRow: TestStep,
+  targetBlock: TestStepBlock,
   overStepIndex: number
 ) => {
+  const previousStep = targetBlock.test.testSteps[overStepIndex - 1];
+  
   const nestedLevel =
     overStepIndex - 1 >= 0
-      ? targetSection.steps[overStepIndex - 1].nestedLevel
+      ? (isTestStep(previousStep)
+          ? previousStep.nestedLevel
+          : 0)
       : 0;
 
   return { ...movedRow, nestedLevel };
 };
 
-export const isListOfTypeStep = (obj: unknown): obj is Step[] => {
+export const isListOfTypeStep = (obj: unknown): obj is TestStep[] => {
   if (Array.isArray(obj)) {
     return obj.every(
       (item) =>
         typeof item === "object" &&
         item !== null &&
         "id" in item &&
-        "name" in item &&
-        "typeOfTest" in item &&
-        "inOrOut" in item &&
-        "onOrOff" in item &&
-        "includedInDataSheet" in item &&
         "nestedLevel" in item
     );
   }
@@ -68,18 +67,39 @@ export const isListOfTypeStep = (obj: unknown): obj is Step[] => {
 };
 
 export const isStepVisible = (
-  step: Step,
+  step: TestStep,
   index: number,
-  steps: Step[],
-  collapsedSteps: string[]
+  steps: TestStep[],
+  collapsedSteps: string[],
+  showComments: boolean
 ) => {
+  console.log({currenStep: step, showComments, isCommentStep: isCommentStep(step)});
+  if (isCommentStep(step) && showComments) {
+    return true;
+  }
+
+  if (isCommentStep(step) && !showComments) {
+    return false;
+  }
+
   for (let i = index - 1; i >= 0; i--) {
-    if (
-      step.nestedLevel > steps[i].nestedLevel &&
-      collapsedSteps.includes(steps[i].id)
+    const currenStep = steps[i];
+
+
+    if (isTestStep(step) && Boolean(step.nestedLevel) && isTestStep(currenStep) &&
+      step.nestedLevel > currenStep.nestedLevel &&
+      collapsedSteps.includes(currenStep.id)
     ) {
       return false;
     }
   }
   return true;
+};
+
+export const isTestStep = (step?: TestStep): step is TestStepType => {
+  return step ? step.type === "test" : false;
+};
+
+export const isCommentStep = (step?: TestStep): step is CommentStepType => {
+  return step ? step.type === "comment" : false;
 };
